@@ -1,0 +1,40 @@
+# FastAPI and Web Server
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+python-multipart==0.0.12
+
+# LangChain RAG and LangGraph
+langchain==0.3.26
+langchain-community==0.3.27
+langchain-openai==0.3.28
+langchain-chroma==0.2.4
+langchain-text-splitters==0.3.8
+langgraph==0.5.3
+
+# Data Processing
+pydantic==2.11.7
+pydantic-settings==2.10.1
+
+# HTTP Client (Java Server Communication)
+httpx==0.28.1
+requests==2.32.3
+
+# Environment Variable Management
+python-dotenv==1.0.1
+
+# Web Scraping (Document Loading)
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# Vector Database
+chromadb==1.0.15
+
+# Logging and Utilities
+loguru==0.7.2
+
+# CORS Support
+fastapi-cors==0.0.6
+
+# Development Tools
+pytest==8.3.3
+pytest-asyncio==0.24.0
