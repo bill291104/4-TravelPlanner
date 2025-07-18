@@ -1,11 +1,10 @@
-from starlette.responses import RedirectResponse
 from fastapi import FastAPI, HTTPException, responses
 from pydantic import BaseModel
 from typing import List, Union, Literal
 
 from langchain_core.documents import Document
 
-from . import setting
+from .setting import db_collections, Domains
 
 app = FastAPI()
 
@@ -29,10 +28,10 @@ async def root():
 class EmbeddingRequest(BaseModel):
     content: str
     metadata: dict
-    domain: Literal["place", "restaurant", "accom"]
+    domain: Domains
     related_contents: Union[List[str], None] = None
 
-@app.post("/embedding", status_code=200)
+@app.post("/embedding", status_code=204)
 async def embedding_travel_data(request: EmbeddingRequest):
     print(request)
     try:
@@ -40,6 +39,7 @@ async def embedding_travel_data(request: EmbeddingRequest):
             page_content=request.content,
             metadata=request.metadata
         )
-        setting.db_collections[request.domain].add_documents([document])
-    except:
-        raise HTTPException(status_code=404, detail="Embedding failed")
+        db_collections[request.domain.value].add_documents([document])
+    except Exception as e:
+        print(f"Embedding failed: {e}")
+        raise HTTPException(status_code=500, detail="Embedding failed")
