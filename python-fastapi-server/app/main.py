@@ -1,12 +1,4 @@
-from fastapi import FastAPI, HTTPException, responses
-from pydantic import BaseModel
-from typing import List, Union, Literal
-
-from langchain_core.documents import Document
-
-from .setting import db_collections, Domains
-
-app = FastAPI()
+# app/main.py
 
 # intellij 에서 서버 구동 방법
 # 1. 가상 환경 구축
@@ -17,29 +9,62 @@ app = FastAPI()
 # 2. api 키 세팅
 # 프로젝트 루트 경로 하위(.venv 폴더와 같은 위치)에 `.env` 이름으로 파일을 만들고 내용에 OPENAI_API_KEY={본인 api-key} 를 입력하고 저장
 # 3. 서버 구동
-# `uvicorn python-fastapi-server.app.main:app --reload` 명령어 입력 <- 8000번 포트로 서버가 구동 되어야 함
+# `uvicorn app.main:app --reload --app-dir python-fastapi-server` 명령어 입력 <- 8000번 포트로 서버가 구동 되어야 함
 # localhost:8000/ 으로 접속 하면 /docs 로 redirect 되어서 이 서버의 api 문서가 보여야 정상
 
+from fastapi import FastAPI, responses
+from contextlib import asynccontextmanager
+from datetime import datetime
 
-@app.get("/")
+from .db.session import initialize_db
+from .routers import embedding
+
+# health check를 위해 lifespan 외부에서도 접근할 전역 변수
+server_startup_time = "N/A"
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ✨ global 키워드로 전역 변수를 수정하겠다고 선언
+    global server_startup_time
+
+    # --- 애플리케이션 시작 시 실행될 로직 ---
+    print("🚀 Application startup...")
+
+    # 1. 시작 시간 기록 (한 번만 실행)
+    startup_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    server_startup_time = startup_time # 전역 변수 업데이트
+
+    # 2. API 문서 제목 업데이트
+    app.title = f"Embedding API (서버 시작: {startup_time})"
+
+    # 3. 데이터베이스 초기화
+    initialize_db()
+
+    yield # 이 시점에서 애플리케이션이 요청을 받기 시작
+
+    # --- 애플리케이션 종료 시 실행될 로직 ---
+    print("👋 Application shutdown...")
+
+# --- App Initialization ---
+app = FastAPI(
+    title="Embedding API (서버 시작 대기 중...)",
+    description="문서 임베딩 및 관리를 위한 API입니다.",
+    lifespan=lifespan # ✨ 모든 시작/종료 로직을 담은 lifespan 등록
+)
+
+# --- Include Routers ---
+app.include_router(embedding.router)
+
+# --- Root Redirect ---
+@app.get("/", include_in_schema=False)
 async def root():
     return responses.RedirectResponse(url="/docs")
 
-class EmbeddingRequest(BaseModel):
-    content: str
-    metadata: dict
-    domain: Domains
-    related_contents: Union[List[str], None] = None
-
-@app.post("/embedding", status_code=204)
-async def embedding_travel_data(request: EmbeddingRequest):
-    print(request)
-    try:
-        document = Document(
-            page_content=request.content,
-            metadata=request.metadata
-        )
-        db_collections[request.domain.value].add_documents([document])
-    except Exception as e:
-        print(f"Embedding failed: {e}")
-        raise HTTPException(status_code=500, detail="Embedding failed")
+# --- Health Check Endpoint ---
+@app.get("/health", tags=["Server Status"])
+async def health_check():
+    """서버의 현재 상태와 시작 시간을 반환합니다."""
+    return {
+        "status": "ok",
+        "server_startup_time": server_startup_time
+    }
