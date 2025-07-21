@@ -1,3 +1,5 @@
+##dependency
+
 # FastAPI and Web Server
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
@@ -38,3 +40,5 @@ fastapi-cors==0.0.6
 # Development Tools
 pytest==8.3.3
 pytest-asyncio==0.24.0
+
+
