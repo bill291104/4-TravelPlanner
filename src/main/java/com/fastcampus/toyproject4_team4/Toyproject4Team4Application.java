@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class Toyproject4Team4Application {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(Toyproject4Team4Application.class, args);
 	}
 
