@@ -19,7 +19,7 @@ async def get_pks_by_similarity_search(request: SimilaritySearchRequest):
     """
     유사도 검색 서비스 함수를 호출하고 결과를 반환합니다.
 
-    - **request**: `SimilaritySearchRequest` 스키마에 맞는 요청 본문.
+    - **request**: `MetadataExtractRequest` 스키마에 맞는 요청 본문.
     - **returns**: 추출된 pk들 문자열 리스트.
     - **raises**: 서비스 계층에서 예외 발생 시 500 Internal Server Error.
     """
