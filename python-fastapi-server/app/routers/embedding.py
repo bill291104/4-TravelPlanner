@@ -1,5 +1,3 @@
-from builtins import len, Exception, int
-
 import logging
 from typing import List
 
@@ -23,7 +21,7 @@ async def embedding_data_batch(
         db_collection = Depends(get_db_collection)
 ):
     try:
-        await embedding_service.create_embeddings_batch(requests, db_collection)
+        embedding_service.create_embeddings_batch(requests, db_collection)
         # logger.info() 사용
         logger.info(f"{len(requests)}개의 문서를 '{domain.value}' 컬렉션에 성공적으로 임베딩했습니다.")
     except Exception as e:
@@ -38,7 +36,7 @@ async def delete_embedded_data_batch(
         db_collection = Depends(get_db_collection)
 ):
     try:
-        await embedding_service.delete_embeddings_batch(pks, db_collection)
+        embedding_service.delete_embeddings_batch(pks, db_collection)
         logger.info(f"'{domain.value}' 컬렉션에서 {len(pks)}개의 문서를 성공적으로 삭제했습니다. (pks: {pks})")
     except Exception as e:
         logger.error(f"배치 삭제 실패: domain='{domain.value}', pks='{pks}', error='{e}'")
@@ -53,7 +51,7 @@ async def embedding_travel_data(
         db_collection = Depends(get_db_collection)
 ):
     try:
-        await embedding_service.create_embedding(request, db_collection)
+        embedding_service.create_embedding(request, db_collection)
         logger.info(f"pk='{request.pk}' 문서를 '{domain.value}' 컬렉션에 성공적으로 임베딩했습니다.")
     except Exception as e:
         logger.error(f"단일 임베딩 실패: domain='{domain.value}', pk='{request.pk}', error='{e}'")
@@ -66,7 +64,7 @@ async def delete_embedded_data(
         db_collection = Depends(get_db_collection)
 ):
     try:
-        await embedding_service.delete_embedding(pk, db_collection)
+        embedding_service.delete_embedding(pk, db_collection)
         logger.info(f"'{domain.value}' 컬렉션에서 pk='{pk}' 문서를 성공적으로 삭제했습니다.")
     except Exception as e:
         logger.error(f"단일 삭제 실패: domain='{domain.value}', pk='{pk}', error='{e}'")
