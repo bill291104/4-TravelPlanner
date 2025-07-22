@@ -10,7 +10,8 @@
 # `uvicorn app.main:app --reload --app-dir python-fastapi-server` 명령어 입력 <- 8000번 포트로 서버가 구동 되어야 함
 # localhost:8000/ 으로 접속 하면 /docs 로 redirect 되어서 이 서버의 api 문서가 보여야 정상
 
-from fastapi import FastAPI, responses
+from fastapi import FastAPI, responses, Request, status
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import datetime
 import logging
@@ -19,6 +20,15 @@ from .core.config import LOGGING_CONFIG # ✨ 로깅 설정 가져오기
 
 from .db.session import initialize_db
 from .routers import embedding, extract, vector_ss
+
+from .core.exceptions import (
+    CustomBaseException,
+    EmbeddingCreationError,
+    EmbeddingDeletionError,
+    TravelDocumentNotFoundError,
+    DatabaseConnectionError,
+    InvalidInputError
+)
 
 # health check를 위해 lifespan 외부에서도 접근할 전역 변수
 server_startup_time = "N/A"
@@ -74,3 +84,32 @@ async def health_check():
         "status": "ok",
         "server_startup_time": server_startup_time
     }
+
+
+# CustomBaseException을 상속 받는 모든 커스텀 예외를 처리
+@app.exception_handler(CustomBaseException)
+async def custom_exception_handler(request: Request, exc: CustomBaseException):
+    print(f"{datetime.now()} Custom Exception Caught: {exc.name} - {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": True,
+            "name" : exc.name,
+            "message" : exc.detail
+        }
+    )
+
+# 나머지 예상치 못한 모든 예외를 처리
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    print(request)
+    print(f"{datetime.now()} Unhandled Exception Caught: {type(exc).__name__} - {str(exc)}")
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content= {
+            "error" : True,
+            "name" : type(exc).__name__, # 예외 클래스 이름
+            "message" : "서버 내부 오류가 발생했습니다.",
+            "detail": str(exc) # 개발/디버깅 환경에서만 원본 예외 메시지 포함 (운영 환경에서는 주석 처리 권장)
+        }
+    )
