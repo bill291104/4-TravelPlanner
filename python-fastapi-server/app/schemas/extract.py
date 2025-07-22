@@ -13,9 +13,3 @@ class KeywordExtractRequest(BaseModel):
     context:str
     target_domain: Domains
     prompt_template:str
-
-class SimilaritySearchRequest(BaseModel):
-    context:str
-    target_domain: Domains
-    target_keywords : List[str]
-    prompt_template: str
