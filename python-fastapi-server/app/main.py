@@ -1,5 +1,3 @@
-# app/main.py
-
 # intellij 에서 서버 구동 방법
 # 1. 가상 환경 구축
 # intellij 에서 터미널을 열면 {리포지토리를 클론한 프로젝트가 있는 경로}\KDT_BE12_Toy_Project4 라고 나옴. 여기가 프로젝트 루트 경로
@@ -15,6 +13,9 @@
 from fastapi import FastAPI, responses
 from contextlib import asynccontextmanager
 from datetime import datetime
+import logging
+from logging.config import dictConfig
+from .core.config import LOGGING_CONFIG # ✨ 로깅 설정 가져오기
 
 from .db.session import initialize_db
 from .routers import embedding, extract, vector_ss
@@ -24,11 +25,14 @@ server_startup_time = "N/A"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ✨ global 키워드로 전역 변수를 수정하겠다고 선언
+    # ✨ 로깅 설정을 애플리케이션에 적용합니다.
+    dictConfig(LOGGING_CONFIG)
+    logger = logging.getLogger("app") # 'app' 로거를 가져옵니다.
+
     global server_startup_time
 
     # --- 애플리케이션 시작 시 실행될 로직 ---
-    print("🚀 Application startup...")
+    logger.info("🚀 Application startup...")
 
     # 1. 시작 시간 기록 (한 번만 실행)
     startup_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -43,7 +47,7 @@ async def lifespan(app: FastAPI):
     yield # 이 시점에서 애플리케이션이 요청을 받기 시작
 
     # --- 애플리케이션 종료 시 실행될 로직 ---
-    print("👋 Application shutdown...")
+    logger.info("👋 Application shutdown...")
 
 # --- App Initialization ---
 app = FastAPI(

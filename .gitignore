@@ -33,3 +33,5 @@ build/
 .vscode/
 
 .env
+/python-fastapi-server/vector_db/
+/python-fastapi-server/logs/
