@@ -1,5 +1,6 @@
 # app/core/constants.py
 from enum import Enum
+from typing import List
 
 class Domains(str, Enum):
     """
@@ -20,6 +21,18 @@ class Domains(str, Enum):
     TRAVEL_STYLE = "travel_style"
     TRAVEL_TREND = "travel_trend"
 
+    @property
+    def get_subs(self) -> List[str]:
+        match self:
+            case Domains.PLACE:
+                return [Domains.PLACE_REVIEW.value(), Domains.TRAVEL_STYLE.value(), Domains.TRAVEL_TREND.value()]
+            case Domains.RESTAURANT:
+                return [Domains.RESTAURANT_REVIEW.value(), Domains.TRAVEL_STYLE.value(), Domains.TRAVEL_TREND.value()]
+            case Domains.ACCOM:
+                return [Domains.ACCOM_REVIEW.value(), Domains.TRAVEL_STYLE.value(), Domains.TRAVEL_TREND.value()]
+            case _:
+                return []
+        
     @property
     def is_main(self) -> bool:
         """
