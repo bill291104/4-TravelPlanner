@@ -1,3 +1,5 @@
+from builtins import str
+
 import os
 import logging.config
 from pydantic_settings import BaseSettings

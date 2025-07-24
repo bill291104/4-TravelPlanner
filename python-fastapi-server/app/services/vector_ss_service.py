@@ -1,66 +1,90 @@
-from typing import List, Tuple
+from builtins import int, bool, isinstance, list, all, ValueError, Exception, print
+import json
+from langchain_core.tools.structured import StructuredTool
+from pydantic import BaseModel
+from typing import List
 from langchain.agents import initialize_agent, AgentType
 from langchain_chroma import Chroma
 from langchain_core.tools import Tool
 import ast
-
-from sympy.polys.domains import domain
-
 from ..schemas.vector_ss import SimilaritySearchRequest
 from ..llm.client import get_llm
+from ..db.session import db_collections
 
-MAIN_KEYWORDS = {"바다","산책","식사","수영","문화","관광지","전통","카페"}
+MAIN_KEYWORDS = {"바다","산책","식사","수영","문화","관광지","전통","카페","물놀이","해수욕장"}
 SUB_KEYWORDS = {"조용한","분위기","신난다","시원한","맛있는","평점","역사적인"}
 
 # 👉 main_collection, sub_collection 전역 변수로 등록
 main_collection: Chroma = None
 sub_collection: Chroma = None
-target_domin : str = None
 
 #메인 키워드로 메인 도메인 찾기
-def main_domain_similarity_search(main_keywords: List[str], target_domain : str) -> List[int]:
-    global main_collection
+def main_domain_similarity_search(main_keywords: List[str], target_domain : str) -> str:
+    main_collection = db_collections[target_domain]
     query = " ".join(main_keywords)
     docs = main_collection.similarity_search(
         query,
         k=5,
-        filter={"domain": target_domain}
+        filter=None
     )
-    main_pks = [doc.metadata["place_id"] for doc in docs]
-    return main_pks
+    main_pks = [int(doc.metadata["place_id"]) for doc in docs]
+    return json.dumps(main_pks)
 
-# 위 tool1 의 진짜 함수를 래핑하는 함수 tool은 인자가 1개만 와야하는데 2개가 필요하므로 다시 한 번 감싼것.
-def main_domain_wrapper(main_keywords: List[str]) -> List[int]:
-    global domain
-    return main_domain_similarity_search(main_keywords, domain)
+#인자 2개를 받기 위한 래퍼클래스의 인자가 될 클래스
+class MainSearchInput(BaseModel):
+    main_keywords: List[str]
+    target_domain: str
 
-tool1 = Tool(
-    name="main_domain_search",
+# # 위 tool1 의 진짜 함수를 래핑하는 함수 tool은 인자가 1개만 와야하는데 2개가 필요하므로 다시 한 번 감싼것.
+def main_domain_wrapper(request: MainSearchInput) -> str:
+    print("🔍 툴1 main_domain_wrapper 실행됨")
+    result = main_domain_similarity_search(request.main_keywords, request.target_domain)
+    print(f"툴 1 결과 : {result}")
+    return result
+
+tool1 = StructuredTool.from_function(
+    name="main_domain_wrapper",
     func=main_domain_wrapper,     # tool로 사용할 함수
-    description="사용자가 요청한 장소, 숙소, 식당 등 '대상'의 후보 목록을 찾는다. 제주도 호텔, 강남역 맛집 처럼 명확한 대상을 찾을 필요가 있을 때 사용한다."
+    description="사용자가 요청한 장소, 숙소, 식당 등 장소가 되는 곳을 찾는다. 호텔, 강남역, 고속터미널 처럼 명확한 대상을 찾을 필요가 있을 때 사용한다.",
+    return_direct=True  #✅ Agent가 Tool 실행 후 바로 종료
 )
 
+# //////////
+
 #서브 키워드로 서브 도메인 찾기
-def subdomain_filter(sub_keywords: List[str]) -> List[int]:
-    global sub_collection
+def subdomain_filter(sub_keywords: List[str]) -> str:
+    print("🔍 툴2 subdomain_filter 실행됨")
+    print(f"서브 키워드: {sub_keywords}")
+
+    # global sub_collection
+
     if not sub_keywords:
-        return []
+        return json.dumps([])
+
     query = " ".join(sub_keywords)
     docs = sub_collection.similarity_search(query, k=5)
-    sub_pks = [doc.metadata["place_id"] for doc in docs]
-    return sub_pks
+    sub_pks = [int(doc.metadata["place_id"]) for doc in docs]
+    result = json.dumps(sub_pks)
+    print(f"툴 1 결과 : {result}")
+    return result
 
 tool2 = Tool(
-    name="subdomain_search",
+    name="subdomain_filter",
     func=subdomain_filter,      # tool로 사용할 함수
     description="리뷰 기반으로 사용자의 주관적인 조건(분위기, 품질, 상태 등)에 맞는 장소를 찾는다. 조용한, 분위기 좋은, 가성비가 뛰어난, 깨끗한 등 실제 경험을 통해 알 수 있는 조건을 확인할 때 사용한다."
 )
+# //////////
 
 async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
-    # 🌟 전역 도메인 설정
+
+    print("🧪 similarity_search 진입!")
+    print("🔍 target_domain 도메인 값:", request.target_domain)
+    print("🔍 target_keywords 키워드:", request.target_keywords)
+
+# 🌟 전역 도메인 설정
     global domain
     domain = request.target_domain.value  # enum이면 .value 붙여줘야 string
-
+    target_domain = request.target_domain.value  # enum이면 .value 붙여줘야 string
     all_keyword = request.target_keywords
 
     def is_known_main_keyword(word: str) -> bool:
@@ -71,55 +95,101 @@ async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
     # 이후 여기서 main/sub 키워드로 분류 가능
     main_keywords = [kw for kw in all_keyword if is_known_main_keyword(kw)]
     sub_keywords = [kw for kw in all_keyword if is_known_sub_keyword(kw)]
-    target_domain = request.target_domain.value  # enum이면 .value 붙여줘야 string
 
-    agent = initialize_agent(
-        tools=[tool1, tool2],              # 사용할 도구(tool) 목록
-        llm=get_llm(),                            # 사용할 언어 모델
-        agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,  # 에이전트 타입
-        verbose=True                        # 실행 로그 보기
+
+    # 🧠 1. agent_main (tool1만 포함)
+    agent_main = initialize_agent(
+        tools=[tool1],
+        llm=get_llm(),
+        agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        handle_parsing_errors=True,
+        max_iterations=4  # 🔧 반복 제한 완화
     )
+    print("🧪 main_prompt 생성 시작")
 
     # 🌟 프롬프트 구성: tool1 → tool2 순서로 수행하도록 명시
-    query_prompt = f"""
-    아래의 키워드를 기반으로 장소 추천 후보를 찾고 필터링해주세요.
+    main_prompt = f"""
+    당신은 장소 후보를 찾기 위해 도구를 사용하는 AI입니다.
 
-    Step 1. 먼저 main_keywords = {main_keywords} 를 사용하여 tool 'main_domain_search'를 호출하세요. 이 Tool은 장소의 후보 목록을 반환합니다.
-
-    Step 2. 다음으로 sub_keywords = {sub_keywords} 를 사용하여 tool 'subdomain_search'를 호출하세요. 이 Tool은 사용자 조건에 부합하는 장소 목록을 반환합니다.
-
-    Step 3. 두 결과의 교집합만 최종 결과로 출력하세요. 예시 출력 형식: [3, 8, 12]
+    다음 메인 키워드를 기반으로 도구를 사용하여 장소 후보 ID 목록을 찾으세요:
+    ```json
+    {{
+      "action": "main_domain_wrapper",
+      "action_input": {{
+        "request": {{
+          "main_keywords": {main_keywords},
+          "target_domain": "{target_domain}"
+        }}
+      }}
+    }}
+    
+    - `main_domain_wrapper`를 통해 찾은 장소 후보들: 사용자의 주요 관심사(예: "{main_keywords}")에 기반합니다.
+    - 💡 도구 실행 후에는 반드시 [1, 6, 2, 9, 4] 이렇게 숫자만 포함된 리스트 형태로 응답하세요.
+    - ❗설명이나 문장 없이 리스트만 출력하세요.
+    - 반드시 JSON 표준 형식을 따르세요 (큰따옴표 사용, 쉼표, 대괄호).
     """
 
+    print("🔍 메인 프롬프트 내용:\n", main_prompt)  # 👈 이거 추가
     try:
-        result = agent.run(query_prompt)
+        print("🔍 main try 진입:\n")  # 👈 이거 추가
+        result = agent_main.run(main_prompt)
+        print(f"🤖 Agent1 결과: {result}")
 
         #문자열인 파이썬 객체를 실제로 해석해서 바꿔줌
         parsed = ast.literal_eval(result)
         if isinstance(parsed, list) and all(isinstance(x, int) for x in parsed):
-            return parsed
+            main_result = parsed
+        else:
+            raise ValueError("리턴된 값이 List[int] 형식이 아님")
+    except Exception as e:
+        print("❌ agent_main() 결과 파싱 실패:", e)
+        return []
+
+    # ////////////
+
+    # 🧠 2. agent_sub (tool2만 포함)
+    agent_sub = initialize_agent(
+        tools=[tool2],
+        llm=get_llm(),
+        agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        handle_parsing_errors=True,
+        max_iterations=4  # 🔧 반복 제한 완화
+    )
+    print("🧪 sub_prompt 생성 시작")
+    sub_prompt = f"""
+    당신은 사용자의 주관적인 조건을 기반으로 장소를 필터링하는 AI입니다.
+
+    다음 서브 키워드를 기반으로 도구를 사용하여 필터링된 장소 ID 목록을 찾으세요:
+    ```json
+    {{
+      "action": "subdomain_filter",
+      "action_input": {sub_keywords}
+    }}
+    
+    - 💡 도구 실행 후에는 반드시 아래 예시처럼 숫자만 포함된 리스트 형태로 응답하세요.
+    - [1, 6, 2, 9, 4]
+    - ❗설명이나 문장 없이 리스트만 출력하세요.
+    - 반드시 JSON 표준 형식을 따르세요 (큰따옴표 사용, 쉼표, 대괄호).
+    """
+
+    print("🔍 두번째 프롬프트 내용:\n", sub_prompt)  # 👈 이거 추가
+    try:
+        print("🔍 try 진입:\n")  # 👈 이거 추가
+        result = agent_sub.run(sub_prompt)
+        print(f"🤖 Agent2 결과: {result}")
+
+        #문자열인 파이썬 객체를 실제로 해석해서 바꿔줌
+        parsed = ast.literal_eval(result)
+        if isinstance(parsed, list) and all(isinstance(x, int) for x in parsed):
+            sub_result = parsed
         else:
             raise ValueError("리턴된 값이 List[int] 형식이 아님")
     except Exception as e:
         print("❌ agent.run() 결과 파싱 실패:", e)
         return []
-from ..schemas.vector_ss import SimilaritySearchRequest
-from langgraph.prebuilt import create_react_agent
-from ..llm.client import get_llm
 
-async def similarity_search(request: SimilaritySearchRequest):
-    def get_weather(city: str) -> str:
-        """Get weather for a given city."""
-        return f"It's always sunny in {city}!"
-
-    prompt = "You are a helpful assistant"
-
-    model = get_llm(temperature=0.1)
-    agent = create_react_agent(model=model, tools=[get_weather], prompt=prompt)
-
-    result = await agent.ainvoke(
-        {"messages": [{"role": "user", "content": "what is the weather in sf"}]}
-    )
-
-    print(result.values())
-    return [1,2,3]
+    # 🎯 두 결과의 교집합 반환
+    intersection = list(set(main_result) & set(sub_result))
+    return intersection
