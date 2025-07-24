@@ -20,6 +20,7 @@ from .core.config import LOGGING_CONFIG # ✨ 로깅 설정 가져오기
 
 from .db.session import initialize_db
 from .routers import embedding, extract, vector_ss
+from fastapi.exceptions import RequestValidationError
 
 from .core.exceptions import (
     CustomBaseException,
@@ -84,6 +85,22 @@ async def health_check():
         "status": "ok",
         "server_startup_time": server_startup_time
     }
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Pydantic 모델 유효성 검사 실패 시 발생하는 오류를 처리합니다.
+    (예: 필수 필드 누락, 데이터 타입 불일치 등)
+    """
+    print(f"{datetime.now()} Pydantic Validation Error Caught: {exc.errors()} for {request.url}")
+    return JSONResponse(
+        content = {
+            "error" : True,
+            "name" : "ValidationError",
+            "message" : "요청 데이터 형식이 유효하지 않습니다.",
+            "details" : exc.errors() # Pydantic이 제공하는 상세 오류 정보
+        },
+    )
 
 
 # CustomBaseException을 상속 받는 모든 커스텀 예외를 처리

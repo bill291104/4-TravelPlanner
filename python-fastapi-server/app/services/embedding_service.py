@@ -14,10 +14,10 @@ from ..core.exceptions import (
     InvalidInputError,
     ContentTooLongError,
     NoRelevantDocumentsFoundError,
-    LLMServiceError
+    LLMServiceError,
 )
 
-MAX_CONTENT_LENGTH_FOR_EMBEDDING = 50000 # 글자수 기준으로 임의 설정. 실제로는 토크나이저로 정확한 토큰 수 계산 권장.
+MAX_CONTENT_LENGTH_FOR_EMBEDDING = 100 # 글자수 기준으로 임의 설정. 실제로는 토크나이저로 정확한 토큰 수 계산 권장.
 
 async def create_embedding(request: EmbeddingRequest, db_collection):
     """
