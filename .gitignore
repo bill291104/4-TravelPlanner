@@ -37,3 +37,5 @@ build/
 /python-fastapi-server/logs/
 
 __pycache__/
+*.ipynb
+*.log
