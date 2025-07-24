@@ -5,5 +5,5 @@ from typing import List, Union, Dict
 class EmbeddingRequest(BaseModel):
     pk: int
     content: str
-    metadata: Dict[str, str]
+    metadata: Union[Dict[str, str], None] = None
     related_contents: Union[List[str], None] = None
