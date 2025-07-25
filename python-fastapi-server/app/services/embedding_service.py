@@ -31,13 +31,10 @@ async def create_embedding(request: EmbeddingRequest, db_collection):
         page_content=content,
         metadata=request.metadata
     )
-    print("request", request)
-    print(f"DEBUG: Service: ChromaDB에 추가될 Document: {document.id}, {document.page_content[:30]}...")
 
     try:
         await db_collection.aadd_documents([document])
         print(f"Document with id = '{request.pk}' added to collection")
-
     except OpenAIError as e:
         raise EmbeddingCreationError(detail = f"OpenAI 임베딩 API 오류: {e}") from e
     except Exception as e:
