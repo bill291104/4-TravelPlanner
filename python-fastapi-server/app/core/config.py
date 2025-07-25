@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 try:
     settings = Settings()
 except ValidationError as e:
-    raise DatabaseConnectionError(detail = " API KEY 오류 발생: {e}") from e
+    raise DatabaseConnectionError(detail = f" API KEY 오류 발생: {e}") from e
 
 # --- Log Directory Setup ---
 # 이 코드는 app/core/config.py에 있을 때, 프로젝트 루트(KDT_BE12_Toy_Project4)에 'logs' 폴더를 생성합니다.
