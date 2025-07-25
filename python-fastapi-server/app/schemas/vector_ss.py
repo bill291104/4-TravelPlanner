@@ -8,3 +8,12 @@ class SimilaritySearchRequest(BaseModel):
     target_domain: Domains
     target_keywords : List[str]
     prompt_template: str
+
+
+
+class SubDomainSimilaritySearchRequest(BaseModel):
+    context:str
+    target_domain: Domains
+    target_keywords : List[str]
+    main_domain_pks: List[str]
+    prompt_template: str

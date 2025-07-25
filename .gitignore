@@ -34,4 +34,6 @@ build/
 
 .env
 /python-fastapi-server/vector_db/
+/python-fastapi-server/__pycache__/
+*.pyc
 /python-fastapi-server/logs/
