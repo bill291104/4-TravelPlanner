@@ -42,7 +42,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Jupyter Notebook files (if you want to ignore all of them)
-# *.ipynb
+*.ipynb
 
 # Log files
 *.log
