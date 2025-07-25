@@ -1,15 +1,21 @@
 # app/llm/client.py
 from langchain_openai import ChatOpenAI
 from ..core.config import settings
+from ..core.exceptions import LLMServiceError, LLMAPIError
 
 # 1. 기본 LLM 클라이언트는 한 번만 생성하여 공유합니다.
 #    API 키와 모델 이름은 설정 파일에서 가져옵니다.
 #    기본 temperature는 0.1로 설정합니다.
-_llm = ChatOpenAI(
-    model=settings.OPENAI_MODEL_NAME,
-    api_key=settings.OPENAI_API_KEY,
-    temperature=0.1
-)
+_llm = None # 초기에는 None으로 설정
+
+try:
+    _llm = ChatOpenAI(
+        model=settings.OPENAI_MODEL_NAME,
+        api_key=settings.OPENAI_API_KEY,
+        temperature=0.1
+    )
+except Exception as e:
+    raise LLMServiceError(detail=f"LLM 클라이언트 초기화 중 예상치 못한 오류 발생: {e}") from e
 
 def get_llm(temperature: float = 0.1):
     """
