@@ -25,14 +25,14 @@ class Domains(str, Enum):
     def get_subs(self) -> List[str]:
         match self:
             case Domains.PLACE:
-                return [Domains.PLACE_REVIEW.value(), Domains.TRAVEL_STYLE.value(), Domains.TRAVEL_TREND.value()]
+                return [Domains.PLACE_REVIEW.value, Domains.TRAVEL_STYLE.value, Domains.TRAVEL_TREND.value]
             case Domains.RESTAURANT:
-                return [Domains.RESTAURANT_REVIEW.value(), Domains.TRAVEL_STYLE.value(), Domains.TRAVEL_TREND.value()]
+                return [Domains.RESTAURANT_REVIEW.value, Domains.TRAVEL_STYLE.value, Domains.TRAVEL_TREND.value]
             case Domains.ACCOM:
-                return [Domains.ACCOM_REVIEW.value(), Domains.TRAVEL_STYLE.value(), Domains.TRAVEL_TREND.value()]
+                return [Domains.ACCOM_REVIEW.value, Domains.TRAVEL_STYLE.value, Domains.TRAVEL_TREND.value]
             case _:
                 return []
-        
+
     @property
     def is_main(self) -> bool:
         """
