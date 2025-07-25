@@ -1,11 +1,13 @@
 # app/services/extract_service.py
-from ..schemas.extract import DomainExtractRequest, KeywordExtractRequest
+from ..schemas.extract import DomainExtractRequest, KeywordExtractRequest, CustomKeywordRequest
+from ..schemas.vector_ss import SimilaritySearchRequest
 from ..llm.client import get_llm
 from ..core.constants import Domains
 
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
 from openai import APIError, RateLimitError
+
 
 async def extract_domain(request: DomainExtractRequest) -> Domains:
     """LLM을 사용하여 주어진 텍스트가 어떤 도메인에 가장 적합한지 분류합니다.
@@ -86,3 +88,48 @@ async def extract_keywords(request: KeywordExtractRequest) -> List[str]:
     except (APIError, RateLimitError) as e:
         # ✨ OpenAI API 관련 오류 발생 시, 원본 오류를 포함하여 예외를 다시 발생시킴
         raise Exception(f"키워드 추출 중 OpenAI API 호출에 오류가 발생했습니다. 원본 오류: {e}")
+
+
+async def extract_with_custom_prompt(request: CustomKeywordRequest) -> list[str]:
+    """
+    사용자 정의 프롬프트를 사용하여 키워드를 추출합니다.
+    """
+    domain_str = "지정되지 않음"
+    if request.domains:
+        domain_str = ", ".join([d.value for d in request.domains])
+
+    final_prompt = request.prompt_template.format(
+        context=request.context,
+        domains=domain_str
+    )
+
+    llm = get_llm(temperature=0.1)
+
+    try:
+        response = await llm.ainvoke(final_prompt)
+        response_content = response.content
+
+        if not response_content:
+            return []
+
+        keywords = [keyword.strip() for keyword in response_content.split(',') if keyword.strip()]
+        return keywords
+    except (APIError, RateLimitError) as e:
+        raise Exception(f"사용자 정의 키워드 추출 중 OpenAI API 호출 오류: {e}")
+
+
+
+async def similarity_search(request: SimilaritySearchRequest) -> List[str]:
+    """
+    주어진 키워드와 가장 유사한 문서의 PK 목록을 반환합니다.
+    """
+    search_query = " ".join(request.keywords)
+    print(f"유사도 검색 실행 -> 쿼리: '{search_query}', 도메인: '{request.target_domain.value}'")
+
+    llm = get_llm(temperature=0.1)
+
+    # 실제 벡터 DB 검색 로직 (현재는 더미 데이터 반환)
+    print("벡터 DB에서 유사 문서 검색 중...")
+    dummy_pks = [f"pk_{request.target_domain.value}_123", f"pk_{request.target_domain.value}_456"]
+
+    return dummy_pks

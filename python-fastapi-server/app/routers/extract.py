@@ -3,7 +3,8 @@ from typing import List
 
 # 서비스 함수와 스키마, 상수를 가져옵니다.
 from ..services import extract_service
-from ..schemas.extract import DomainExtractRequest, KeywordExtractRequest, CustomKeywordRequest, SimilaritySearchRequest
+from ..schemas.extract import DomainExtractRequest, KeywordExtractRequest, CustomKeywordRequest
+from ..schemas.vector_ss import SimilaritySearchRequest
 from ..core.constants import Domains
 
 # "/extract" 접두사를 가진 라우터를 생성합니다.
@@ -106,7 +107,8 @@ async def handle_similarity_search_pks(request: SimilaritySearchRequest):
     """
     try:
         # 'extract_service' 모듈의 'similarity_search' 함수를 직접 호출
-        return extract_service.similarity_search(request)
+        result_pks = await extract_service.similarity_search(request)
+        return result_pks
     except Exception as e:
         # 서비스에서 발생한 상세한 예외 메시지를 클라이언트에게 전달합니다.
         raise HTTPException(

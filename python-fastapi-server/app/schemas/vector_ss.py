@@ -1,3 +1,5 @@
+# app/schemas/vector_ss.py
+
 from pydantic import BaseModel
 from typing import List
 
