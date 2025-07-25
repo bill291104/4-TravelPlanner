@@ -32,7 +32,7 @@ class Domains(str, Enum):
                 return [Domains.ACCOM_REVIEW.value, Domains.TRAVEL_STYLE.value, Domains.TRAVEL_TREND.value]
             case _:
                 return []
-        
+
     @property
     def is_main(self) -> bool:
         """
