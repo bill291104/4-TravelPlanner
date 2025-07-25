@@ -1,3 +1,4 @@
+import enum
 from builtins import int, bool, isinstance, list, all, ValueError, Exception, print
 import json
 from langchain_core.tools.structured import StructuredTool
@@ -5,7 +6,7 @@ from pydantic import BaseModel
 from typing import List
 from langchain.agents import initialize_agent, AgentType
 from langchain_chroma import Chroma
-from langchain_core.tools import Tool
+from ..core.constants import Domains
 import ast
 from ..schemas.vector_ss import SimilaritySearchRequest
 from ..llm.client import get_llm
@@ -21,17 +22,6 @@ sub_collection: Chroma = None
 
 #메인 키워드로 메인 도메인 찾기
 def main_keyword_similarity_search(main_keywords: List[str], target_domain: str) -> str:
-    # main_collections = db_collections[target_domain]
-    # query = " ".join(main_keywords)
-    #
-    # docs = main_collections.similarity_search(
-    #     query,
-    #     k=5,
-    #     filter=None
-    # )
-    # result_pks = list({int(doc.metadata["place_id"]) for doc in docs})
-    # return json.dumps(result_pks)
-
     main_collection = db_collections[target_domain]
     query = " ".join(main_keywords)
     docs = main_collection.similarity_search(
@@ -47,11 +37,17 @@ class MainSearchInput(BaseModel):
     main_keywords: List[str]
     target_domain: str
 
+    sub_collection_names: List[str]
+    domain_enum = Domains(enum)
+    sub_collection_names = domain_enum.get_subs
+
+
 # # 위 tool1 의 진짜 함수를 래핑하는 함수 tool은 인자가 1개만 와야하는데 2개가 필요하므로 다시 한 번 감싼것.
 def main_domain_wrapper(request: MainSearchInput) -> str:
     print("🔍 툴1 main_keyword_similarity_search 실행됨")
     main_result = main_keyword_similarity_search(request.main_keywords, request.target_domain)
     print(f"툴 1 결과 : {main_result}")
+
     return main_result
 
 tool1 = StructuredTool.from_function(
@@ -95,6 +91,7 @@ def sub_domain_similarity_search(sub_keywords: List[str], main_result: str) -> s
 class SubSearchInput(BaseModel):
     sub_keywords: List[str]
     main_result: str    # tool1 결과 문자열
+    sub_collection_names: List[str]
 
 def sub_domain_wrapper(request: SubSearchInput) -> str:
     print("🔍 툴2 sub_domain_wrapper 실행됨")
