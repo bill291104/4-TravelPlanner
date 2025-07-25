@@ -1,5 +1,5 @@
 # app/services/schemas/planning.py
-from typing import TypedDict, List
+from typing import TypedDict, List, Optional
 from ...core.constants import Domains
 
 class Event(TypedDict):
@@ -35,3 +35,66 @@ class TravelPlan(TypedDict):
     destination: str            # 주요 여행지 (예: "부산광역시")
     total_days: int             # 총 여행 기간 (예: 4)
     daily_plans: List[DailyPlan] # 일자별 계획 목록
+
+class BaseTravelDetail(TypedDict):
+    """
+    여행 계획을 세우기 위한 단일 데이터의 기본 타입입니다.
+    Tool을 사용할 때 필요한 공통 필드를 포함합니다.
+    'name': 이름, 'lon': 경도, 'lat': 위도, 'exp_cost': 예상 비용, 'description': 설명
+    """
+    name: str
+    lat: float
+    lon: float
+    exp_cost: float
+    description: str
+
+class PlaceDetail(BaseTravelDetail):
+    """
+    여행지에 대한 세부 정보 스키마입니다.
+    RDB의 pk와 같은 고유 식별자를 포함합니다.
+    """
+    pk: int
+    category: str | None
+    operating_hours: str | None
+    required_time: str | None
+
+class RestaurantDetail(BaseTravelDetail):
+    """
+    식당에 대한 세부 정보 스키마입니다.
+    RDB의 pk와 같은 고유 식별자를 포함합니다.
+    """
+    pk: int
+    cuisine_type: str | None
+    signature_menu: str | None
+    operating_hours: str | None
+
+class AccommodationDetail(BaseTravelDetail):
+    """
+    숙소에 대한 세부 정보 스키마입니다.
+    RDB의 pk와 같은 고유 식별자를 포함합니다.
+    """
+    pk: int
+    accom_type: str
+    grade: str | None
+    amenities: List[str] | None
+    check_in_out_time: str | None
+    booking_url: str | None
+
+# --- 최종 State 정의 ---
+
+class TravelData(TypedDict):
+    """
+    여행 계획 에이전트의 전체 상태(State)를 정의하는 스키마입니다.
+    이 데이터 구조는 LangGraph의 노드를 거치며 업데이트됩니다.
+    """
+    # 에이전트가 사용할 검색된 정보 목록
+    places: List[PlaceDetail]
+    restaurants: List[RestaurantDetail]
+    accommodations: List[AccommodationDetail]
+    # 사용자의 추가 요청
+    additional_info: List[str] | None
+
+    # 각 워커의 결과물을 저장할 필드
+    worker_results: List[TravelPlan]
+    # 최종적으로 생성될 여행 계획
+    plan: Optional[TravelPlan]

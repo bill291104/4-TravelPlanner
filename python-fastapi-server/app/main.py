@@ -18,7 +18,7 @@ from logging.config import dictConfig
 from .core.config import LOGGING_CONFIG # ✨ 로깅 설정 가져오기
 
 from .db.session import initialize_db
-from .routers import embedding, extract, vector_ss
+from .routers import embedding, extract, vector_ss, planning
 
 # health check를 위해 lifespan 외부에서도 접근할 전역 변수
 server_startup_time = "N/A"
@@ -60,6 +60,7 @@ app = FastAPI(
 app.include_router(embedding.router)
 app.include_router(extract.router)
 app.include_router(vector_ss.router)
+app.include_router(planning.router)
 
 # --- Root Redirect ---
 @app.get("/", include_in_schema=False)
