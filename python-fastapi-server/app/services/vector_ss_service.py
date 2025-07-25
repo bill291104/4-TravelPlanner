@@ -18,7 +18,6 @@ SUB_KEYWORDS = {"조용한","분위기","신난다","시원한","맛있는","평
 
 # 👉 main_collection, sub_collection 전역 변수로 등록
 main_collections: Chroma = None
-sub_collection: Chroma = None
 
 #메인 키워드로 메인 도메인 찾기
 def main_keyword_similarity_search(main_keywords: List[str], target_domain: str) -> str:
@@ -29,17 +28,19 @@ def main_keyword_similarity_search(main_keywords: List[str], target_domain: str)
         k=5,
         filter=None
     )
-    main_pks = [int(doc.metadata["place_id"]) for doc in docs]
-    return json.dumps(main_pks)
+    main_doc_pks = [int(doc.id) for doc in docs]
+    print (f"Document의 id들 : {main_doc_pks}")
+    return json.dumps(main_doc_pks)
 
 #인자 2개를 받기 위한 래퍼클래스의 인자가 될 클래스
 class MainSearchInput(BaseModel):
     main_keywords: List[str]
     target_domain: str
+    # main_doc_pks: List[str]
 
-    sub_collection_names: List[str]
-    domain_enum = Domains(enum)
-    sub_collection_names = domain_enum.get_subs
+    # sub_collection_names: List[str]
+    # domain_enum = Domains(enum)
+    # sub_collection_names = domain_enum.get_subs
 
 
 # # 위 tool1 의 진짜 함수를 래핑하는 함수 tool은 인자가 1개만 와야하는데 2개가 필요하므로 다시 한 번 감싼것.
@@ -59,43 +60,85 @@ tool1 = StructuredTool.from_function(
 
 # ////////// 서브로 거르기
 
-def sub_domain_similarity_search(sub_keywords: List[str], main_result: str) -> str:
+def sub_domain_similarity_search(sub_keywords: List[str], target_domain:str,main_doc_pks: str) -> str:
     if not sub_keywords:
         return json.dumps([])
 
-    # ✅ Tool1의 결과 main_result(JSON 문자열)를 리스트로 변환
+    #targaet_domaain으로 subCollection 찾기
     try:
-        main_pks = json.loads(main_result)
-    except json.JSONDecodeError:
+        domain_enum = Domains(target_domain)  # 예: "place" → Domains.PLACE
+    except ValueError:
+        raise ValueError(f"잘못된 도메인: {target_domain}")
         return json.dumps([])
 
-    global sub_collection    # 외부에서 설정한 전역 컬렉션 객체 사용
-    query = " ".join(sub_keywords)
+    sub_collection_names = domain_enum.get_subs  # 예: ["place_review", "travel_style", "travel_trend"]
+    # ✅ Tool1의 결과 main_doc_pks(JSON 문자열)를 리스트로 변환
+    try:
+        main_pks = json.loads(main_doc_pks)
+        print(f"🔍 파싱된 main_pks : {main_pks}")
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON 파싱 실패: {e}")
+        return json.dumps([])
 
-    docs = sub_collection.similarity_search(
-        query=query,
-        k=10,
-        filter=None
-    )
+    #서브컬렉션 이름을 찾았으니 지정해서 유사도 검사하기
+    query = " ".join(sub_keywords)
+    print(f"🔍 검색 쿼리: {query}")
+
+    final_pks = set()
+
+    for name in sub_collection_names:
+        print(f"🔍 {name} 컬렉션에서 검색 중...")
+        if name not in db_collections:
+            print(f"❌ {name} 컬렉션을 찾을 수 없음")
+            continue
+
+        sub_collection = db_collections[name]  # ✅ 반복문 안에서 서브컬렉션 객체 꺼냄
+        docs = sub_collection.similarity_search(
+            query=query,
+            k=10,
+            filter={"fk": {"$in": main_pks}}  # tool1 결과 기반 필터링
+        )
+        print(f"🔍 {name}에서 찾은 문서 수: {len(docs)}")
 
     # 🎯 main_pks(fk) 포함 여부로 필터링
-    filtered_pks = [
-        int(doc.metadata["place_id"])
-        for doc in docs
-        if "fk" in doc.metadata and int(doc.metadata["fk"]) in main_pks
-    ]
 
-    return json.dumps(filtered_pks)
+
+        for doc in docs:
+            print(f"닥스 가져왔나???? {docs.metadata}")
+            if "fk" in doc.metadata:
+                fk_value = int(doc.metadata["fk"])
+            if fk_value in main_pks:
+                print(f"메타데이터 있어여??? {doc.metadata.fk}")
+                final_pks.add(fk_value)
+                print( f"필터링결과 >> {fk_value} 짜잔 ")
+
+    return json.dumps(list(final_pks))
+
 
 #인자 2개를 받기 위한 래퍼클래스의 인자가 될 클래스
 class SubSearchInput(BaseModel):
     sub_keywords: List[str]
     main_result: str    # tool1 결과 문자열
-    sub_collection_names: List[str]
+    target_domain: str
+    # sub_collection_names: List[str]
+    # main_doc_pks: List[str]
 
 def sub_domain_wrapper(request: SubSearchInput) -> str:
     print("🔍 툴2 sub_domain_wrapper 실행됨")
-    sub_result = sub_domain_similarity_search(request.sub_keywords, request.main_result)
+    try:
+        parsed_main_result = json.loads(request.main_result)
+        print("🔍 넘어왔어????111")
+        if not isinstance(parsed_main_result, list):
+            raise ValueError("main_result가 리스트 형태가 아닙니다.")
+    except Exception as e:
+        raise ValueError(f"main_result 파싱 실패: {e}")
+        return json.dumps([])
+
+    sub_result = sub_domain_similarity_search(
+        request.sub_keywords,
+        request.target_domain,
+        request.main_result,
+    )
     print(f"툴 2 결과 : {sub_result}")
     return sub_result
 
@@ -160,6 +203,7 @@ async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
     - 💡 도구 실행 후에는 반드시 숫자만 포함된 리스트 형태로 응답하세요.
     - ❗설명이나 문장 없이 리스트만 출력하세요.
     - 반드시 JSON 표준 형식을 따르세요 (큰따옴표 사용, 쉼표, 대괄호).
+    - 이 결과를 tool2 에게 전달하세요.
     """
 
     print("🔍 메인 프롬프트 내용:\n", main_prompt)  # 👈 이거 추가
@@ -200,11 +244,13 @@ async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
       "action_input": {{
         "request": {{
           "sub_keywords": {sub_keywords},
-          "main_result": "{result}"
+          "main_result": "{result}",
+          "target_domain": "{target_domain}"
         }}
       }}
     }}
     
+    - tool1이 전달한 값을 가지고 로직을 실행하세요.
     - 💡 도구 실행 후에는 반드시 아래 예시처럼 숫자만 포함된 리스트 형태로 응답하세요.
     - ❗설명이나 문장 없이 리스트만 출력하세요.
     - 반드시 JSON 표준 형식을 따르세요 (큰따옴표 사용, 쉼표, 대괄호).
@@ -225,8 +271,3 @@ async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
     except Exception as e:
         print("❌ agent.run() 결과 파싱 실패:", e)
         return []
-
-    # 🎯 두 결과의 교집합 반환
-    intersection = list(set(main_result) & set(sub_result))
-    print (intersection)
-    return intersection
