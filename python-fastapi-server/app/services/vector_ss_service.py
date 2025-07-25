@@ -10,16 +10,28 @@ import ast
 from ..schemas.vector_ss import SimilaritySearchRequest
 from ..llm.client import get_llm
 from ..db.session import db_collections
+from langchain_core.prompts import ChatPromptTemplate
 
 MAIN_KEYWORDS = {"바다","산책","식사","수영","문화","관광지","전통","카페","물놀이","해수욕장"}
 SUB_KEYWORDS = {"조용한","분위기","신난다","시원한","맛있는","평점","역사적인"}
 
 # 👉 main_collection, sub_collection 전역 변수로 등록
-main_collection: Chroma = None
+main_collections: Chroma = None
 sub_collection: Chroma = None
 
 #메인 키워드로 메인 도메인 찾기
-def main_domain_similarity_search(main_keywords: List[str], target_domain : str) -> str:
+def main_keyword_similarity_search(main_keywords: List[str], target_domain: str) -> str:
+    # main_collections = db_collections[target_domain]
+    # query = " ".join(main_keywords)
+    #
+    # docs = main_collections.similarity_search(
+    #     query,
+    #     k=5,
+    #     filter=None
+    # )
+    # result_pks = list({int(doc.metadata["place_id"]) for doc in docs})
+    # return json.dumps(result_pks)
+
     main_collection = db_collections[target_domain]
     query = " ".join(main_keywords)
     docs = main_collection.similarity_search(
@@ -37,10 +49,10 @@ class MainSearchInput(BaseModel):
 
 # # 위 tool1 의 진짜 함수를 래핑하는 함수 tool은 인자가 1개만 와야하는데 2개가 필요하므로 다시 한 번 감싼것.
 def main_domain_wrapper(request: MainSearchInput) -> str:
-    print("🔍 툴1 main_domain_wrapper 실행됨")
-    result = main_domain_similarity_search(request.main_keywords, request.target_domain)
-    print(f"툴 1 결과 : {result}")
-    return result
+    print("🔍 툴1 main_keyword_similarity_search 실행됨")
+    main_result = main_keyword_similarity_search(request.main_keywords, request.target_domain)
+    print(f"툴 1 결과 : {main_result}")
+    return main_result
 
 tool1 = StructuredTool.from_function(
     name="main_domain_wrapper",
@@ -49,29 +61,52 @@ tool1 = StructuredTool.from_function(
     return_direct=True  #✅ Agent가 Tool 실행 후 바로 종료
 )
 
-# //////////
+# ////////// 서브로 거르기
 
-#서브 키워드로 서브 도메인 찾기
-def subdomain_filter(sub_keywords: List[str]) -> str:
-    print("🔍 툴2 subdomain_filter 실행됨")
-    print(f"서브 키워드: {sub_keywords}")
-
-    # global sub_collection
-
+def sub_domain_similarity_search(sub_keywords: List[str], main_result: str) -> str:
     if not sub_keywords:
         return json.dumps([])
 
-    query = " ".join(sub_keywords)
-    docs = sub_collection.similarity_search(query, k=5)
-    sub_pks = [int(doc.metadata["place_id"]) for doc in docs]
-    result = json.dumps(sub_pks)
-    print(f"툴 1 결과 : {result}")
-    return result
+    # ✅ Tool1의 결과 main_result(JSON 문자열)를 리스트로 변환
+    try:
+        main_pks = json.loads(main_result)
+    except json.JSONDecodeError:
+        return json.dumps([])
 
-tool2 = Tool(
-    name="subdomain_filter",
-    func=subdomain_filter,      # tool로 사용할 함수
-    description="리뷰 기반으로 사용자의 주관적인 조건(분위기, 품질, 상태 등)에 맞는 장소를 찾는다. 조용한, 분위기 좋은, 가성비가 뛰어난, 깨끗한 등 실제 경험을 통해 알 수 있는 조건을 확인할 때 사용한다."
+    global sub_collection    # 외부에서 설정한 전역 컬렉션 객체 사용
+    query = " ".join(sub_keywords)
+
+    docs = sub_collection.similarity_search(
+        query=query,
+        k=10,
+        filter=None
+    )
+
+    # 🎯 main_pks(fk) 포함 여부로 필터링
+    filtered_pks = [
+        int(doc.metadata["place_id"])
+        for doc in docs
+        if "fk" in doc.metadata and int(doc.metadata["fk"]) in main_pks
+    ]
+
+    return json.dumps(filtered_pks)
+
+#인자 2개를 받기 위한 래퍼클래스의 인자가 될 클래스
+class SubSearchInput(BaseModel):
+    sub_keywords: List[str]
+    main_result: str    # tool1 결과 문자열
+
+def sub_domain_wrapper(request: SubSearchInput) -> str:
+    print("🔍 툴2 sub_domain_wrapper 실행됨")
+    sub_result = sub_domain_similarity_search(request.sub_keywords, request.main_result)
+    print(f"툴 2 결과 : {sub_result}")
+    return sub_result
+
+tool2 = StructuredTool.from_function(
+    name="sub_domain_wrapper",
+    func=sub_domain_wrapper,      # too2로 사용할 함수
+    description="리뷰 기반으로 사용자의 주관적인 조건(분위기, 품질, 상태 등)에 맞는 장소를 찾는다. 조용한, 분위기 좋은, 가성비가 뛰어난, 깨끗한 등 실제 경험을 통해 알 수 있는 조건을 확인할 때 사용한다.",
+    return_direct=True
 )
 # //////////
 
@@ -125,7 +160,7 @@ async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
     }}
     
     - `main_domain_wrapper`를 통해 찾은 장소 후보들: 사용자의 주요 관심사(예: "{main_keywords}")에 기반합니다.
-    - 💡 도구 실행 후에는 반드시 [1, 6, 2, 9, 4] 이렇게 숫자만 포함된 리스트 형태로 응답하세요.
+    - 💡 도구 실행 후에는 반드시 숫자만 포함된 리스트 형태로 응답하세요.
     - ❗설명이나 문장 없이 리스트만 출력하세요.
     - 반드시 JSON 표준 형식을 따르세요 (큰따옴표 사용, 쉼표, 대괄호).
     """
@@ -164,19 +199,23 @@ async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
     다음 서브 키워드를 기반으로 도구를 사용하여 필터링된 장소 ID 목록을 찾으세요:
     ```json
     {{
-      "action": "subdomain_filter",
-      "action_input": {sub_keywords}
+      "action": "sub_domain_wrapper",
+      "action_input": {{
+        "request": {{
+          "sub_keywords": {sub_keywords},
+          "main_result": "{result}"
+        }}
+      }}
     }}
     
     - 💡 도구 실행 후에는 반드시 아래 예시처럼 숫자만 포함된 리스트 형태로 응답하세요.
-    - [1, 6, 2, 9, 4]
     - ❗설명이나 문장 없이 리스트만 출력하세요.
     - 반드시 JSON 표준 형식을 따르세요 (큰따옴표 사용, 쉼표, 대괄호).
     """
 
     print("🔍 두번째 프롬프트 내용:\n", sub_prompt)  # 👈 이거 추가
     try:
-        print("🔍 try 진입:\n")  # 👈 이거 추가
+        print("🔍 sub try 진입:\n")  # 👈 이거 추가
         result = agent_sub.run(sub_prompt)
         print(f"🤖 Agent2 결과: {result}")
 
@@ -192,4 +231,5 @@ async def similarity_search(request: SimilaritySearchRequest) -> List[int]:
 
     # 🎯 두 결과의 교집합 반환
     intersection = list(set(main_result) & set(sub_result))
+    print (intersection)
     return intersection
