@@ -50,13 +50,6 @@ class NoRelevantDocumentsFoundError(CustomBaseException):
     def __init__(self, detail: str = "쿼리에 대한 관련 문서를 찾을 수 없습니다."):
         super().__init__(detail=detail, status_code=status.HTTP_404_NOT_FOUND)
 
-class DuplicateEntryError(CustomBaseException):
-    """중복된 항목(예: PK)을 추가하려 할 때 발생"""
-    def __init__(self, detail: str = "이미 존재하는 항목입니다."):
-        # HTTP 409는 리소스의 현재 상태와 충돌할 때 사용
-        # 중복된 PK는 이 경우에 적합
-        super().__init__(detail=detail, status_code=status.HTTP_409_CONFLICT)
-
 # LLM 관련 예외
 class LLMServiceError(CustomBaseException):
     """LLM 서비스 전반에서 발생하는 오류 기본 클래스"""
@@ -99,8 +92,3 @@ class AmbiguousClassificationError(CustomBaseException):
     LLM이 명확하게 관광지, 맛집 중 하나로 분류하지 못 하고 모호하다고 판단했을 때"""
     def __init__(self, detail: str = "LLM의 도메인 분류가 모호하여 확신하기 어렵습니다."):
         super().__init__(detail=detail, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-class ContentTooLongError(CustomBaseException):
-    """입력 콘텐츠가 최대 길이를 초과할 때 발생"""
-    def __init__(self, detail: str = "입력 내용이 너무 길어 처리할 수 없습니다."):
-        super().__init__(detail=detail, status_code=status.HTTP_400_BAD_REQUEST)

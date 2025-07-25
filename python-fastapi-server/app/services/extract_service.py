@@ -17,8 +17,6 @@ from ..core.exceptions import (
     UnsupportedDomainClassificationError
 )
 
-MAX_CONTENT_LENGTH_FOR_LLM = 50000
-
 async def extract_domain(request: DomainExtractRequest) -> Domains:
     """LLM을 사용하여 주어진 텍스트가 어떤 도메인에 가장 적합한지 분류합니다.
     (A.1 PromptTemplateError, B.1 UnsupportedDomainClassificationError 적용)

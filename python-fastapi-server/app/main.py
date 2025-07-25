@@ -94,6 +94,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """
     print(f"{datetime.now()} Pydantic Validation Error Caught: {exc.errors()} for {request.url}")
     return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
         content = {
             "error" : True,
             "name" : "ValidationError",
