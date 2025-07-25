@@ -44,6 +44,12 @@ class InvalidInputError(CustomBaseException):
     def __init__(self, detail: str = "유효하지 않은 입력입니다."):
         super().__init__(detail=detail, status_code=status.HTTP_400_BAD_REQUEST)
 
+class NoRelevantDocumentsFoundError(CustomBaseException):
+    """벡터 DB에서 관련 문서를 찾을 수 없을 때 발생
+    부산 맛집에 대한 사용자의 질문으로 벡터 DB를 검색했지만, 관련된 맛집 임베딩 정보가 하나도 없을 때"""
+    def __init__(self, detail: str = "쿼리에 대한 관련 문서를 찾을 수 없습니다."):
+        super().__init__(detail=detail, status_code=status.HTTP_404_NOT_FOUND)
+
 # LLM 관련 예외
 class LLMServiceError(CustomBaseException):
     """LLM 서비스 전반에서 발생하는 오류 기본 클래스"""
@@ -86,9 +92,3 @@ class AmbiguousClassificationError(CustomBaseException):
     LLM이 명확하게 관광지, 맛집 중 하나로 분류하지 못 하고 모호하다고 판단했을 때"""
     def __init__(self, detail: str = "LLM의 도메인 분류가 모호하여 확신하기 어렵습니다."):
         super().__init__(detail=detail, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-class NoRelevantDocumentsFoundError(CustomBaseException):
-    """벡터 DB에서 관련 문서를 찾을 수 없을 때 발생
-    부산 맛집에 대한 사용자의 질문으로 벡터 DB를 검색했지만, 관련된 맛집 임베딩 정보가 하나도 없을 때"""
-    def __init__(self, detail: str = "쿼리에 대한 관련 문서를 찾을 수 없습니다."):
-        super().__init__(detail=detail, status_code=status.HTTP_404_NOT_FOUND)

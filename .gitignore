@@ -37,3 +37,17 @@ build/
 /python-fastapi-server/__pycache__/
 *.pyc
 /python-fastapi-server/logs/
+
+__pycache__/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Jupyter Notebook files (if you want to ignore all of them)
+*.ipynb
+
+# Log files
+*.log
+
+# Specific log files from your screenshot
+hs_err_pid*.log

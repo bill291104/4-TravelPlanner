@@ -1,17 +1,22 @@
 import os
 import logging.config
+
+from pydantic_core._pydantic_core import ValidationError
 from pydantic_settings import BaseSettings
+from ..core.exceptions import DatabaseConnectionError
 
 # --- Pydantic Settings ---
 class Settings(BaseSettings):
     OPENAI_API_KEY: str
     OPENAI_MODEL_NAME: str = "gpt-4o-mini"
+    TMAP_APP_KEY: str
 
     class Config:
         env_file = ".env" # 프로젝트 루트의 .env 파일을 읽도록 설정
-
-settings = Settings()
-
+try:
+    settings = Settings()
+except ValidationError as e:
+    raise DatabaseConnectionError(detail = " API KEY 오류 발생: {e}") from e
 
 # --- Log Directory Setup ---
 # 이 코드는 app/core/config.py에 있을 때, 프로젝트 루트(KDT_BE12_Toy_Project4)에 'logs' 폴더를 생성합니다.

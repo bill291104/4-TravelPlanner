@@ -16,7 +16,7 @@ async def create_embedding(request: EmbeddingRequest, db_collection):
         page_content=content,
         metadata=request.metadata
     )
-    db_collection.aadd_documents([document])
+    await db_collection.aadd_documents([document])
 
 async def create_embeddings_batch(requests: List[EmbeddingRequest], db_collection):
     """
@@ -36,7 +36,7 @@ async def create_embeddings_batch(requests: List[EmbeddingRequest], db_collectio
         documents.append(document)
 
     if documents:
-        db_collection.aadd_documents(documents)
+        await db_collection.aadd_documents(documents)
 
 async def delete_embedding(pk: int, db_collection):
     """
@@ -51,5 +51,5 @@ async def delete_embeddings_batch(pks: List[int], db_collection):
     # ChromaDB는 id를 문자열 리스트로 받습니다.
     ids_to_delete = [str(pk) for pk in pks]
     if ids_to_delete:
-        db_collection.adelete(ids=ids_to_delete)
+        await db_collection.adelete(ids=ids_to_delete)
         print(f"{len(ids_to_delete)} documents deleted.")
