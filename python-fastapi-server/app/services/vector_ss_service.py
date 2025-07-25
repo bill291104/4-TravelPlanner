@@ -58,7 +58,7 @@ async def main_domain_search(request: SimilaritySearchRequest) -> List[Document]
         #메인 컬렉션의 document
         main_domain_docs = main_collection.similarity_search(query,k=20)
         print(f"검색된 문서 수: {len(main_domain_docs)}")
-        
+
         # 검색된 모든 문서의 metadata 출력
         for i, doc in enumerate(main_domain_docs):
             print(f"문서 {i+1}: ID={doc.metadata.get('additionalProp1')}, content={doc.page_content[:50]}...")
@@ -181,8 +181,8 @@ async def subdomain_filter(main_domain_docs: List[Document], request: Similarity
         # 언급된 FK의 빈도수를 계산 (많이 언급될수록 순위가 높음)
         #  pk_frequency = linked_FKs의 리스트를 입력으로 받아서 딕셔너리 형태로 만듦
         # filtered_pks =
-            # 1차 검색 결과(main_domain_keys)에 포함된 PK들만 필터링
-            # 1차 검색 범위에 없던 것은 최종 추천 목록에 들어오는 것을 방지
+        # 1차 검색 결과(main_domain_keys)에 포함된 PK들만 필터링
+        # 1차 검색 범위에 없던 것은 최종 추천 목록에 들어오는 것을 방지
         # sorted_pks = 빈도수(언급 횟수)가 높은 순으로 정렬
 
         pk_frequency = {pk: len(sub_pks) for pk, sub_pks in main_to_sub_pks_map.items()}
