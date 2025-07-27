@@ -8,3 +8,6 @@ class SimilaritySearchRequest(BaseModel):
     target_domain: Domains
     target_keywords : List[str]
     prompt_template: str
+
+class SimilaritySearchResponse(BaseModel):
+    pks: List[int]
