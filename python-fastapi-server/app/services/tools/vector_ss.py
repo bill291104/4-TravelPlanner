@@ -15,10 +15,10 @@ async def main_domain_similarity_search(main_domain: Literal["place", "restauran
     """
     main_collection = db_collections[main_domain]
     pks = set()
-    for keyword in main_keywords:
-        documents = await main_collection.asimilarity_search(query=keyword, k=10)
-        for d in documents:
-            pks.add(int(d.id))
+    query = " ".join(main_keywords)
+    documents = await main_collection.asimilarity_search(query=query, k=10)
+    for d in documents:
+        pks.add(int(d.id))
     return list(pks)
 
 # Tool_2 subdomain filter
@@ -40,9 +40,9 @@ async def subdomain_filter(
     """
     sub_collection = db_collections[subdomain]
     filter_set = set()
-    for keyword in sub_keywords:
-        documents = await sub_collection.asimilarity_search(query=keyword, k=10)
-        for d in documents:
-            filter_set.add(int(d.metadata['fk']))
+    query = " ".join(sub_keywords)
+    documents = await sub_collection.asimilarity_search(query=query, k=10)
+    for d in documents:
+        filter_set.add(int(d.metadata['fk']))
     target_set = set(target_pks)
     return list(target_set & filter_set)
