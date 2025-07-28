@@ -80,7 +80,7 @@ class VectorSearchControllerTest {
         mockMvc.perform(post("/api/vector/search-by-ids")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpected(status().isOk())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("place 도메인에서 0개 레코드 조회 완료"))
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data").isEmpty());
