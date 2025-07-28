@@ -49,6 +49,7 @@ public class ExtractService {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
             return objectMapper.readValue(response.body(), new TypeReference<Domains>(){});
         } catch (JsonProcessingException e) {
             e.printStackTrace();
@@ -71,6 +72,7 @@ public class ExtractService {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
             return objectMapper.readValue(response.body(), new TypeReference<List<String>>(){});
         } catch (JsonProcessingException e) {
             e.printStackTrace();
