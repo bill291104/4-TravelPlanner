@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 
-from ..schemas.vector_ss import SimilaritySearchRequest
+from ..schemas.vector_ss import SimilaritySearchRequest, SimilaritySearchResponse
 from ..services import vector_ss_service
 
 router = APIRouter(
@@ -11,7 +11,7 @@ router = APIRouter(
 
 @router.post(
     "/pks",
-    response_model=List[int],
+    response_model=SimilaritySearchResponse,
     summary="추출된 키워드들로 유사도 검색 후 metadata 에서 pk들 추출",
     description="텍스틀 부터 추출한 도메인과 키워드로 유사도가 높은 meatdata의 pk를 찾아 좋은 답변을 할 수 있게 해준다."
 )
