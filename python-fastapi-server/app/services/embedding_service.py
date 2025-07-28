@@ -21,7 +21,6 @@ async def create_embedding(request: EmbeddingRequest, db_collection):
     if not request.content: # ""
         raise InvalidInputError(detail="임베딩 할 내용(Content)이 비어 있습니다.")
 
-
     content = request.content
     if request.related_contents:
         content += "\n\n추가 정보\n\n" + "\n".join(request.related_contents)

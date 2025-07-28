@@ -29,10 +29,7 @@ async def extract_domain(request: DomainExtractRequest) -> Domains:
     """
 
     # 1. 템플릿 유효성 검사
-    try:
-        template = ChatPromptTemplate.from_template(request.prompt_template)
-    except ValueError as e:
-        raise PromptTemplateError(detail=f"프롬프트 템플릿 오류: {e}") from e
+    template = ChatPromptTemplate.from_template(request.prompt_template)
 
     if "{context}" not in request.prompt_template or "{domains}" not in request.prompt_template:
         raise PromptTemplateError(detail="프롬프트 템플릿에 'context' 또는 'domains' 변수가 누락되었습니다.")
@@ -44,7 +41,6 @@ async def extract_domain(request: DomainExtractRequest) -> Domains:
 
     llm = get_llm(temperature=0.1)
 
-    # API 호출을 시도하고 그 결과를 변수에 저장합니다.
     try:
         response = await llm.ainvoke(prompt)
         response_content = response.content.strip()
@@ -81,10 +77,7 @@ async def extract_keywords(request: KeywordExtractRequest) -> List[str]:
     Raises:
         Exception: LLM API 호출에 실패하거나, 응답 형식이 예상과 다를 때 발생합니다.
     """
-    try:
-        template = ChatPromptTemplate.from_template(request.prompt_template)
-    except ValueError as e:
-        raise PromptTemplateError(detail=f"프롬프트 템플릿 오류: {e}") from e
+    template = ChatPromptTemplate.from_template(request.prompt_template)
 
     if "{context}" not in request.prompt_template or "{domain}" not in request.prompt_template:
         raise PromptTemplateError(detail="프롬프트에 'context' 또는 'target_domain' 변수가 누락되었습니다.")
@@ -102,7 +95,7 @@ async def extract_keywords(request: KeywordExtractRequest) -> List[str]:
         response_content = response.content.strip() # LLM은 종종 불필요한 공백/줄바꿈 포함하기에 문자열 앞뒤 공백, 줄바꿈(\n), 탭 등을 제거
         # ✨ LLM 응답이 비어있거나, 파싱 결과가 없을 경우를 명시적으로 확인
         if not response_content:
-            raise Exception("키워드 추출에 실패했습니다. LLM이 빈 응답을 반환했습니다.")
+            raise LLMResponseError(detail="키워드 추출에 실패했습니다. LLM이 빈 응답을 반환했습니다.")
 
         keywords = [keyword.strip() for keyword in response_content.split(",") if keyword.strip()]
 
@@ -111,10 +104,6 @@ async def extract_keywords(request: KeywordExtractRequest) -> List[str]:
                 detail=f"LLM 응답에서 유효한 키워드를 찾을 수 없습니다: '{response_content}'"
             )
         return keywords
-
-    except (APIError, RateLimitError) as e:
-        # ✨ OpenAI API 관련 오류 발생 시, 원본 오류를 포함하여 예외를 다시 발생시킴
-        raise Exception(f"키워드 추출 중 OpenAI API 호출에 오류가 발생했습니다. 원본 오류: {e}")
 
     except (APIError, RateLimitError) as e:
         raise LLMAPIError(detail=f"키워드 추출 중 OpenAI API 오류: {e}") from e
