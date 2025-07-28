@@ -22,7 +22,5 @@ async def similarity_search(request: SimilaritySearchRequest):
     분류 후 유사도 검색에 사용될 target_keywords: {request.target_keywords}
     """
     result_dict = await agent.ainvoke({"messages": [("user", message)]})
-    print("\n\n"+"*"*50+"\n\n")
-    print(result_dict)
     result = result_dict.get("structured_response")
     return result
