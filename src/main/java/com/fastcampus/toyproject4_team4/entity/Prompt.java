@@ -1,9 +1,6 @@
 package com.fastcampus.toyproject4_team4.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,7 +11,8 @@ public class Prompt {
     @Id
     private String id;
 
-    @OneToOne(mappedBy = "CODE")
+    @OneToOne
+    @JoinColumn(name = "SCENARIO_CODE")
     private Scenario scenario;
 
     @Column(name = "PROMPT_TEMPLATE", nullable = false)
