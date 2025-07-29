@@ -13,7 +13,9 @@ import java.time.Duration;
 import com.fastcampus.toyproject4_team4.exceptions.FastAPIExceptionUtil;
 import com.fastcampus.toyproject4_team4.exceptions.FastAPIExceptionUtil.ApiClientException;
 import com.fastcampus.toyproject4_team4.exceptions.PythonServiceException;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 public class APIUtil {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final HttpClient client = HttpClient.newBuilder()
@@ -36,23 +38,11 @@ public class APIUtil {
             return objectMapper.readValue(response.body(), responseTypeRef);
         } catch (JsonProcessingException e) {
             // 요청 본문 직렬화 또는 성공 응답 본문 역직렬화 도중 발생
-            e.printStackTrace();
+            log.error(e.getMessage());
             throw new FastAPIExceptionUtil.ServerErrorException("JSON 처리 중 오류 발생: " + e.getMessage()); // ✨ FastAPIExceptionUtil의 ServerErrorException 사용
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
             throw new FastAPIExceptionUtil.ServerErrorException("Python 서비스와 통신 중 오류 발생: " + e.getMessage()); // ✨ FastAPIExceptionUtil의 ServerErrorException 사용
-        } catch (ApiClientException e) {
-            // FastAPIExceptionUtil.handleErrorResponse에서 던져진 ApiClientException 계열의 예외를 다시 던짐
-            e.printStackTrace();
-            throw e;
-        } catch (PythonServiceException e) {
-            // FastAPIExceptionUtil.handleErrorResponse에서 던져진 PythonServiceException 계열의 예외를 다시 던짐
-            e.printStackTrace();
-            throw e;
-        } catch (Exception e) {
-            // 예상치 못한 모든 기타 예외 (최후의 보루)
-            e.printStackTrace();
-            throw new FastAPIExceptionUtil.ServerErrorException("sendPostRequest 중 예상치 못한 오류 발생: " + e.getMessage()); // ✨ FastAPIExceptionUtil의 ServerErrorException 사용
         }
     }
 }
