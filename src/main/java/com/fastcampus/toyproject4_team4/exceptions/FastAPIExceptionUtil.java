@@ -65,7 +65,7 @@ public class FastAPIExceptionUtil {
      *
      * @param response 서버로부터 받은 HttpResponse 객체
      */
-    public void handleErrorResponse(HttpResponse<String> response) throws ApiClientException, PythonServiceException {
+    public static void handleErrorResponse(HttpResponse<String> response) throws ApiClientException, PythonServiceException {
         int statusCode = response.statusCode();
         String responseBody = response.body();
 
