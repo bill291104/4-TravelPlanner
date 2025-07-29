@@ -1,7 +1,10 @@
-from fastapi import APIRouter, HTTPException
+import logging
+from fastapi import APIRouter
 
 from ..services import planning_service
 from ..schemas.planning import PlanningRequest ,PlanningResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/planning",
@@ -21,4 +24,10 @@ async def make_plan(planning_request: PlanningRequest):
     :param planning_request: PlanningRequest
     :return: PlanningResponse
     """
-    return await planning_service.make_travel_plan(planning_request)
+    logger.info(f"\n'make_plan' 요청\n요청 내용: \n\n{planning_request}\n")
+    try:
+        result = await planning_service.make_travel_plan(planning_request)
+        logger.info(f"\n여행 계획 세우기 완료\n==========결과==========\n{result}\n")
+        return result
+    except Exception as e:
+        logger.error(e)

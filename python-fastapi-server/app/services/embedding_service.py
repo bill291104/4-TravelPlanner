@@ -8,8 +8,8 @@ from typing import List
 from ..core.exceptions import (
     EmbeddingCreationError,
     EmbeddingDeletionError,
-    TravelDocumentNotFoundError,
-    InvalidInputError
+    InvalidInputError,
+    LLMAPIError
 )
 
 
@@ -35,7 +35,7 @@ async def create_embedding(request: EmbeddingRequest, db_collection):
         await db_collection.aadd_documents([document])
         print(f"Document with id = '{request.pk}' added to collection")
     except OpenAIError as e:
-        raise EmbeddingCreationError(detail = f"OpenAI 임베딩 API 오류: {e}") from e
+        raise LLMAPIError(detail = f"OpenAI 임베딩 API 오류: {e}") from e
     except Exception as e:
         raise EmbeddingCreationError(detail=f"사용자 답변 임베딩 생성 중 알 수 없는 오류: {e}") from e
 
@@ -69,7 +69,7 @@ async def create_embeddings_batch(requests: List[EmbeddingRequest], db_collectio
             print(f"{len(documents)} documents added to collection")
 
     except OpenAIError as e:
-        raise EmbeddingCreationError(detail = f"OpenAI 임베딩 API 오류 (배치): {e}") from e
+        raise LLMAPIError(detail = f"OpenAI 임베딩 API 오류 (배치): {e}") from e
 
     except Exception as e:
         raise EmbeddingCreationError(detail=f"사용자 답변 배치 임베딩 생성 중 알 수 없는 오류 발생 : {e}") from e
