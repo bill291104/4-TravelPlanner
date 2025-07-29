@@ -2,6 +2,7 @@ package com.fastcampus.toyproject4_team4.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
 import java.net.URI;
@@ -10,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
+@Log4j2
 public class APIUtil {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final HttpClient client = HttpClient.newBuilder()
@@ -18,6 +20,7 @@ public class APIUtil {
             .build();
 
     static <S, R> R sendPostRequest(String uri, S payload, TypeReference<R> responseTypeRef) {
+        log.debug("Send Post Request\nPayload: {}", payload);
         try {
             String requestBody = objectMapper.writeValueAsString(payload);
             HttpRequest request = HttpRequest.newBuilder()

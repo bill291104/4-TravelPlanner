@@ -7,10 +7,12 @@ import com.fastcampus.toyproject4_team4.entity.Scenario;
 import com.fastcampus.toyproject4_team4.repository.PromptRepository;
 import com.fastcampus.toyproject4_team4.repository.ScenarioRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class VectorService {
     private final PromptRepository promptRepository;
@@ -22,10 +24,14 @@ public class VectorService {
     }
 
     public List<Integer> service(String context, Domains targetDomain, List<String> keywords) {
+        log.debug("Vector Service Called\nArguments\ncontext: {}\ntargetDomain: {}\nkeywords: {}", context, targetDomain.toString(), keywords);
         Scenario scenario = scenarioRepository.findByCode("VSS_001").orElseThrow(IllegalArgumentException::new);
         Prompt prompt = promptRepository.findByScenario(scenario).orElseThrow(IllegalArgumentException::new);
 
         FastAPISimilaritySearchRequest payload = new FastAPISimilaritySearchRequest(context, targetDomain, keywords, prompt.getPromptTemplate());
-        return APIUtil.sendPostRequest("http://localhost:8000/vector_ss/pks", payload, new TypeReference<List<Integer>>(){});
+        log.debug("Payload: {}", payload);
+        List<Integer> pks = APIUtil.sendPostRequest("http://localhost:8000/vector_ss/pks", payload, new TypeReference<List<Integer>>() {});
+        log.debug("PK Extract Successfully\nResult\npks: {}", pks);
+        return pks;
     }
 }
