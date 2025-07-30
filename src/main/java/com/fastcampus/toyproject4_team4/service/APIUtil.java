@@ -24,7 +24,7 @@ public class APIUtil {
             .connectTimeout(Duration.ofSeconds(100))
             .build();
 
-    static <S, R> R sendPostRequest(String uri, S payload, TypeReference<R> responseTypeRef) {
+    public static <S, R> R sendPostRequest(String uri, S payload, TypeReference<R> responseTypeRef) {
         log.debug("Send Post Request\nPayload: {}", payload);
         try {
             String requestBody = objectMapper.writeValueAsString(payload);
