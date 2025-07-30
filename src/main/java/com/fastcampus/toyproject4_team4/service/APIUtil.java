@@ -1,6 +1,5 @@
 package com.fastcampus.toyproject4_team4.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
@@ -11,10 +10,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import com.fastcampus.toyproject4_team4.exceptions.FastAPIExceptionUtil;
-import com.fastcampus.toyproject4_team4.exceptions.FastAPIExceptionUtil.ApiClientException;
-import com.fastcampus.toyproject4_team4.exceptions.PythonServiceException;
-import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class APIUtil {
@@ -34,17 +29,45 @@ public class APIUtil {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            FastAPIExceptionUtil.handleErrorResponse(response);
-
+            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
             return objectMapper.readValue(response.body(), responseTypeRef);
-        } catch (JsonProcessingException e) {
-            // 요청 본문 직렬화 또는 성공 응답 본문 역직렬화 도중 발생
-            log.error(e.getMessage());
-            throw new FastAPIExceptionUtil.ServerErrorException("JSON 처리 중 오류 발생: " + e.getMessage()); // ✨ FastAPIExceptionUtil의 ServerErrorException 사용
         } catch (IOException | InterruptedException e) {
-            log.error(e.getMessage());
-            throw new FastAPIExceptionUtil.ServerErrorException("Python 서비스와 통신 중 오류 발생: " + e.getMessage()); // ✨ FastAPIExceptionUtil의 ServerErrorException 사용
+            e.printStackTrace();
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    static <S> void sendPostRequest(String uri, S payload) {
+        log.debug("Send Post Request\nPayload: {}", payload);
+        try {
+            String requestBody = objectMapper.writeValueAsString(payload);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(uri))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    static void sendDeleteRequest(String uri) {
+        log.debug("Send Delete Request");
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(uri))
+                    .header("Content-Type", "application/json")
+                    .DELETE()
+                    .build();
+            client.send(request, HttpResponse.BodyHandlers.ofString());
+            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 }
+
