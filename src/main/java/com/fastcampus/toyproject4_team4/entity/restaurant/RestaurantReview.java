@@ -18,7 +18,7 @@ public class RestaurantReview {
     @Column(name = "review_id")
     private Long id;
 
-    @Column(name = "raiting")
+    @Column(name = "rating")
     private Byte rating;
 
     @Column(name = "comment", columnDefinition = "TEXT")
