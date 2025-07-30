@@ -72,4 +72,8 @@ public class Restaurant {
     @JoinTable(name = "restaurant_hashtag", joinColumns = @JoinColumn(name = "restaurant_id"), inverseJoinColumns = @JoinColumn(name = "hashtag_id"))
     @ManyToMany
     private List<Hashtag> hashtags = new ArrayList<>();
+
+    // ✅ 추가된 필드 (중복 식당 제거용)
+    @Column(name = "google_place_id", length = 100, unique = true)
+    private String googlePlaceId;
 }
