@@ -22,62 +22,59 @@ public class ManagerController {
         return "manager/manager";
     }
 
-    @PostMapping("/{domain}")
     @ResponseBody
+    @PostMapping("/{domain}")
     public ResponseEntity<Void> embedding(@PathVariable String domain, @RequestParam Integer pk) {
         managerService.embedding(domain, pk);
         return  ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{domain}/batch")
     @ResponseBody
+    @PostMapping("/{domain}/batch")
     public ResponseEntity<Void> embeddingBatch(@PathVariable String domain, @RequestParam List<Integer> pks) {
         managerService.embeddingBatch(domain, pks);
         return  ResponseEntity.ok().build();
     }
 
-    @GetMapping("/main/{domain}")
-    public String getAllMain(@PathVariable String domain, Pageable pageable, Model model) {
-        Page<?> result = managerService.getAllMain(domain, pageable);
-        model.addAttribute("page", result);
-        model.addAttribute("domain", domain);
-        return "manager/manager";
-    }
-
-    @GetMapping("/sub/{domain}/{pk}")
-    public String getAllSub(@PathVariable String domain, @PathVariable Integer pk, Pageable pageable, Model model) {
-        Page<?> result = managerService.getAllSub(domain, pk, pageable);
-        model.addAttribute("page", result);
-        model.addAttribute("domain", domain);
-        model.addAttribute("mainPk", pk);
-        return "manager/manager";
-    }
-
-    @PatchMapping("/{domain}")
     @ResponseBody
+    @GetMapping("/main/{domain}")
+    public ResponseEntity<Page<?>> getAllMain(@PathVariable String domain, Pageable pageable) {
+        Page<?> result = managerService.getAllMain(domain, pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @ResponseBody
+    @GetMapping("/sub/{domain}/{pk}")
+    public ResponseEntity<Page<?>> getAllSub(@PathVariable String domain, @PathVariable Integer pk, Pageable pageable) {
+        Page<?> result = managerService.getAllSub(domain, pk, pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @ResponseBody
+    @PatchMapping("/{domain}")
     public ResponseEntity<Void> update(@PathVariable String domain, @RequestParam Integer pk) {
         managerService.delete(domain, pk);
         managerService.embedding(domain, pk);
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{domain}/batch")
     @ResponseBody
+    @PatchMapping("/{domain}/batch")
     public ResponseEntity<Void> updateBatch(@PathVariable String domain, @RequestParam List<Integer> pks) {
         managerService.deleteBatch(domain, pks);
         managerService.embeddingBatch(domain, pks);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{domain}")
     @ResponseBody
+    @DeleteMapping("/{domain}")
     public ResponseEntity<Void> delete(@PathVariable String domain, @RequestParam Integer pk) {
         managerService.delete(domain, pk);
         return  ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{domain}/batch")
     @ResponseBody
+    @DeleteMapping("/{domain}/batch")
     public  ResponseEntity<Void> deleteBatch(@PathVariable String domain, @RequestParam List<Integer> pks) {
         managerService.deleteBatch(domain, pks);
         return  ResponseEntity.ok().build();

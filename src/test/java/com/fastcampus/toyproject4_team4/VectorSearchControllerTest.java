@@ -1,9 +1,5 @@
 package com.fastcampus.toyproject4_team4;
 
-import com.fastcampus.toyproject4_team4.controller.VectorSearchController;
-import com.fastcampus.toyproject4_team4.dto.VectorSearchRequest;
-import com.fastcampus.toyproject4_team4.dto.VectorSearchResponse;
-import com.fastcampus.toyproject4_team4.service.VectorSearchService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
