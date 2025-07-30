@@ -17,6 +17,7 @@ def initialize_db():
     """
     try:
         print("Initializing ChromaDB collections...")
+        collection_name = "initializing..."
         embedding_function = OpenAIEmbeddings(
             model="text-embedding-3-large",
             api_key=settings.OPENAI_API_KEY # 환경변수 자동 인식 기능을 사용하면 이 줄은 필요 없습니다.
