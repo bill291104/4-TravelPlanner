@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, HTTPException
 from typing import List
 
@@ -5,6 +6,9 @@ from typing import List
 from ..services import extract_service
 from ..schemas.extract import DomainExtractRequest, KeywordExtractRequest
 from ..core.constants import Domains
+
+logger = logging.getLogger(__name__)
+
 # service에서 온 모든 오류가 routers의 try-except 블록을 통해 500 Internal Server Error로 바뀜
 # "/extract" 접두사를 가진 라우터를 생성합니다.
 router = APIRouter(
@@ -27,6 +31,7 @@ async def handle_extract_domain(request: DomainExtractRequest):
     """
     # 비동기 서비스 함수를 await로 호출합니다.
     result_domain = await extract_service.extract_domain(request)
+    logger.info(f"{request.context} 에서 \nDomain: '{result_domain}' 을 추출했습니다.")
     return result_domain
 
 @router.post(
@@ -44,4 +49,5 @@ async def handle_extract_keywords(request: KeywordExtractRequest):
     """
     # 비동기 서비스 함수를 await로 호출합니다.
     result_keywords = await extract_service.extract_keywords(request)
+    logger.info(f"{request.context} 에서 \nKeywords: '{result_keywords}' 을 추출했습니다.")
     return result_keywords
