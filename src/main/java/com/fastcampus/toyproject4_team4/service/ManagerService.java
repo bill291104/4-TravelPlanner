@@ -40,8 +40,6 @@ public class ManagerService {
     private final RestaurantReviewRepository restaurantReviewRepository;
     private final AccommodationRepository accommodationRepository;
     private final AccommodationReviewRepository accommodationReviewRepository;
-    private final AmenityRepository amenityRepository;
-    private final RestaurantMenuRepository restaurantMenuRepository;
 
     public Page<?> getAllMain(Domains mainDomain, Pageable pageable) {
         return switch (mainDomain) {
