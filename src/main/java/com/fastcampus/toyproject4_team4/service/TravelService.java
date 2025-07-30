@@ -67,20 +67,20 @@ public class TravelService {
      */
     public TravelDetailResponse<?> getDetail(String domain, List<Integer> pks) {
         return switch (domain.toLowerCase()) {
-            case "place", "places" -> {
+            case "place" -> {
                 List<PlaceDto> places = getPlacesByIds(pks);
                 yield new TravelDetailResponse<>(domain, places);
             }
-            case "restaurant", "restaurants" -> {
+            case "restaurant" -> {
                 List<RestaurantDto> restaurants = getRestaurantsByIds(pks);
                 yield new TravelDetailResponse<>(domain, restaurants);
             }
-            case "accommodation", "accommodations" -> {
+            case "accom" -> {
                 List<AccommodationDto> accommodations = getAccommodationsByIds(pks);
                 yield new TravelDetailResponse<>(domain, accommodations);
             }
             default -> throw new IllegalArgumentException("Unsupported domain: " + domain + 
-                ". Supported domains: place, restaurant, accommodation");
+                ". Supported domains: place, restaurant, accom");
         };
     }
     
