@@ -18,9 +18,8 @@ import java.util.List;
 public class Hashtag {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "hashtag_id")
-    private Long id;
+    private Integer id;
 
     @Column(name = "content", length = 255, unique = true, nullable = false)
     private String content;

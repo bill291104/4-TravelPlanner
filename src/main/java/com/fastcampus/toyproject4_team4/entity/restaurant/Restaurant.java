@@ -19,9 +19,8 @@ import java.util.List;
 public class Restaurant {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "restaurant_id")
-    private Long id;
+    private Integer id;
 
     @Column(name = "name", length = 100)
     private String name;

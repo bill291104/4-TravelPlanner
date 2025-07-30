@@ -14,9 +14,8 @@ import java.time.LocalDateTime;
 public class AccomReview {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "review_id")
-    private Long id;
+    private Integer id;
 
     @Column(name = "rating")
     private Byte rating;

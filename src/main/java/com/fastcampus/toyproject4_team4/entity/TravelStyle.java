@@ -18,9 +18,8 @@ import java.time.LocalDateTime;
 public class TravelStyle {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "travel_style_id")
-    private Long id;
+    private Integer id;
 
     @Column(name = "name", length = 255)
     private String name;

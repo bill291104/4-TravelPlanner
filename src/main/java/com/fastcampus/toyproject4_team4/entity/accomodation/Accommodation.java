@@ -20,9 +20,8 @@ import java.util.List;
 public class Accommodation {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "accom_id")
-    private Long id;
+    private Integer id;
 
     @Column(name = "name")
     private String name;
