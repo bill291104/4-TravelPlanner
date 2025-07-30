@@ -4,29 +4,26 @@ import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
 import com.fastcampus.toyproject4_team4.entity.place.Place;
 import com.fastcampus.toyproject4_team4.entity.restaurant.Restaurant;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "hashtag")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Data
+@Table(name = "HASHTAG")
 public class Hashtag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "hashtag_id")
+    @Column(name = "HASHTAG_ID")
     private Long id;
 
-    @Column(name = "content", length = 255, unique = true, nullable = false)
+    @Column(name = "CONTENT", nullable = false)
     private String content;
 
     @ManyToMany(mappedBy = "hashtags")
-    private List<Accommodation> accoms = new ArrayList<>();
+    private List<Accommodation> accommodations = new ArrayList<>();
 
     @ManyToMany(mappedBy = "hashtags")
     private List<Place> places = new ArrayList<>();

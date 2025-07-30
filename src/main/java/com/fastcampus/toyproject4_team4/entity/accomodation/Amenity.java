@@ -1,36 +1,34 @@
 package com.fastcampus.toyproject4_team4.entity.accomodation;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "amenity")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Data
+@Table(name = "AMENITY")
 public class Amenity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "amenity_id")
+    @Column(name = "AMENITY_ID")
     private Long id;
 
-    @Column(name = "name")
+    @Column(name = "NAME", nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "DESCRIPTION", columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(name = "is_free")
+    @Column(name = "IS_FREE")
     private Byte isFree;
 
-    @Column(name = "price", precision = 19, scale = 2)
+    @Column(name = "PRICE", precision = 19, scale = 2)
     private BigDecimal price;
 
-    @ManyToOne
-    @JoinColumn(name = "accom_id")
-    private Accommodation accommodation;
+    @ManyToMany(mappedBy = "amenities")
+    private List<Accommodation> accommodations = new ArrayList<>();
 }

@@ -1,16 +1,17 @@
 package  com.fastcampus.toyproject4_team4.service;
 
-
+import com.fastcampus.toyproject4_team4.Domains;
 import com.fastcampus.toyproject4_team4.dto.EmbeddingRequest;
-import com.fastcampus.toyproject4_team4.entity.accomodation.AccomReview;
+import com.fastcampus.toyproject4_team4.entity.accomodation.AccommodationReview;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Amenity;
 import com.fastcampus.toyproject4_team4.entity.place.Place;
 import com.fastcampus.toyproject4_team4.entity.place.PlaceReview;
 import com.fastcampus.toyproject4_team4.entity.restaurant.Restaurant;
-import com.fastcampus.toyproject4_team4.entity.restaurant.RestaurantMenu;
+import com.fastcampus.toyproject4_team4.entity.restaurant.Menu;
 import com.fastcampus.toyproject4_team4.entity.restaurant.RestaurantReview;
 import com.fastcampus.toyproject4_team4.repository.*;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -18,9 +19,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
@@ -36,271 +38,310 @@ public class ManagerService {
     private final PlaceReviewRepository placeReviewRepository;
     private final RestaurantRepository restaurantRepository;
     private final RestaurantReviewRepository restaurantReviewRepository;
-    private final AccomRepository accomRepository;
-    private final AccomReviewRepository accomReviewRepository;
+    private final AccommodationRepository accommodationRepository;
+    private final AccommodationReviewRepository accommodationReviewRepository;
     private final AmenityRepository amenityRepository;
     private final RestaurantMenuRepository restaurantMenuRepository;
 
-    public Page<?> getAllMain(String mainDomain, Pageable pageable) {
-        switch (mainDomain) {
-            case "place" -> {
-                return getAllPlaces(pageable);
-            }
-            case "restaurant" -> {
-                return getAllRestaurants(pageable);
-            }
-            case "accom" -> {
-                return getAllAccoms(pageable);
-            }
+    public Page<?> getAllMain(Domains mainDomain, Pageable pageable) {
+        return switch (mainDomain) {
+            case PLACE -> getAllPlaces(pageable);
+            case RESTAURANT -> getAllRestaurants(pageable);
+            case ACCOM -> getAllAccoms(pageable);
             default -> throw new IllegalArgumentException("잘못된 메인 도메인입니다.");
-        }
+        };
     }
 
     // Place Read
-    public Page<Place> getAllPlaces(Pageable pageable) {
+    private Page<Place> getAllPlaces(Pageable pageable) {
         return placeRepository.findAll(pageable);
     }
     // Restaurant Read
-    public Page<Restaurant> getAllRestaurants(Pageable pageable) {
+    private Page<Restaurant> getAllRestaurants(Pageable pageable) {
         return restaurantRepository.findAll(pageable);
     }
     // Accom Read
-    public Page<Accommodation> getAllAccoms(Pageable pageable) {
-        return accomRepository.findAll(pageable);
+    private Page<Accommodation> getAllAccoms(Pageable pageable) {
+        return accommodationRepository.findAll(pageable);
     }
 
-    public Page<?> getAllSub(String subDomain, Integer pk, Pageable pageable) {
-        switch (subDomain) {
-            case  "place_review" -> {
-                return getReviewsByPlace(pk, pageable);
-            }
-            case "accom_review" -> {
-                return getReviewsByAccom(pk, pageable);
-            }
-            case "restaurant_review" -> {
-                return getReviewsByRestaurant(pk, pageable);
-            }
-            case "amenity" -> {
-                return getAmenitiesByAccom(pk, pageable);
-            }
-            case "restaurant_menu" -> {
-                return getRestaurantMenusByRestaurant(pk, pageable);
-            }
+    public Page<?> getAllSub(Domains subDomain, Long pk, Pageable pageable) {
+        return switch (subDomain) {
+            case PLACE_REVIEW -> getReviewsByPlace(pk, pageable);
+            case ACCOM_REVIEW -> getReviewsByAccom(pk, pageable);
+            case RESTAURANT_REVIEW -> getReviewsByRestaurant(pk, pageable);
             default -> throw new IllegalArgumentException("잘못된 서브 도메인입니다.");
-        }
+        };
     }
+
     // PlaceReview Read
-    public Page<PlaceReview> getReviewsByPlace(Integer placeId, Pageable pageable) {
+    private Page<PlaceReview> getReviewsByPlace(Long placeId, Pageable pageable) {
         Place place = placeRepository.findById(placeId).orElseThrow(IllegalArgumentException::new);
         return placeReviewRepository.findByPlace(place, pageable);
     }
     // AccomReview Read
-    public Page<AccomReview> getReviewsByAccom(Integer accomId, Pageable pageable) {
-        Accommodation accom = accomRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
-        return accomReviewRepository.findByAccommodation(accom, pageable);
+    private Page<AccommodationReview> getReviewsByAccom(Long accomId, Pageable pageable) {
+        Accommodation accom = accommodationRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
+        return accommodationReviewRepository.findByAccommodation(accom, pageable);
     }
     // RestaurantReview Read
-    public Page<RestaurantReview> getReviewsByRestaurant(Integer restaurantId, Pageable pageable) {
+    private Page<RestaurantReview> getReviewsByRestaurant(Long restaurantId, Pageable pageable) {
         Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(IllegalArgumentException::new);
         return restaurantReviewRepository.findByRestaurant(restaurant, pageable);
     }
-    // Amenity Read
-    public Page<Amenity> getAmenitiesByAccom(Integer accomId, Pageable pageable) {
-        Accommodation accom = accomRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
-        return amenityRepository.findByAccommodation(accom, pageable);
-    }
-    // RestaurantMenu Read
-    public Page<RestaurantMenu> getRestaurantMenusByRestaurant(Integer restaurantId, Pageable pageable) {
-        Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(IllegalArgumentException::new);
-        return restaurantMenuRepository.findByRestaurant(restaurant, pageable);
-    }
 
-    public void embedding(String domain, Integer pk) {
+    public void embedding(Domains domain, Long pk) {
         switch (domain) {
-            case "place" -> embedPlace(pk);
-            case "accom" -> embedAccom(pk);
-            case "restaurant" -> embedRestaurant(pk);
-            case "place_review" -> embedPlaceReview(pk);
-            case "accom_review" -> embedAccomReview(pk);
-            case "restaurant_review" -> embedRestaurantReview(pk);
+            case PLACE -> embedPlace(pk);
+            case ACCOM -> embedAccom(pk);
+            case RESTAURANT -> embedRestaurant(pk);
+            case PLACE_REVIEW -> embedPlaceReview(pk);
+            case ACCOM_REVIEW -> embedAccomReview(pk);
+            case RESTAURANT_REVIEW -> embedRestaurantReview(pk);
         }
     }
 
-    public void embeddingBatch(String domain, List<Integer> pks) {
+    public void embeddingBatch(Domains domain, List<Long> pks) {
         switch (domain) {
-            case "place" -> embedPlaceBatch(pks);
-            case "accom" -> embedAccomBatch(pks);
-            case "restaurant" -> embedRestaurantBatch(pks);
-            case "place_review" -> embedPlaceReviewBatch(pks);
-            case "accom_review" -> embedAccomReviewBatch(pks);
-            case "restaurant_review" -> embedRestaurantReviewBatch(pks);
+            case PLACE -> embedPlaceBatch(pks);
+            case ACCOM -> embedAccomBatch(pks);
+            case RESTAURANT -> embedRestaurantBatch(pks);
+            case PLACE_REVIEW -> embedPlaceReviewBatch(pks);
+            case ACCOM_REVIEW -> embedAccomReviewBatch(pks);
+            case RESTAURANT_REVIEW -> embedRestaurantReviewBatch(pks);
         }
     }
     // Place Create
-    public void embedPlace(Integer placeId) {
+    private void embedPlace(Long placeId) {
+        // 영속성 엔티티 가져 오기
         Place place = placeRepository.findById(placeId).orElseThrow(IllegalArgumentException::new);
+        // 임베딩 요청 객체 만들기
         EmbeddingRequest request = new EmbeddingRequest(placeId, place.getDescription(), null, null);
+        // 요청, 응답
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place", request);
+        // 임베딩 시간 기록 하기
+        place.setEmbeddedAt(LocalDateTime.now());
+        placeRepository.save(place);
     }
     // Place Batch Create
-    public void embedPlaceBatch(List<Integer> placeIds) {
-        List<EmbeddingRequest> requests = placeIds.stream().map(placeId -> {
-            Place place = placeRepository.findById(placeId).orElseThrow(IllegalArgumentException::new);
-            return new EmbeddingRequest(placeId, place.getDescription(), null, null);
-        }).toList();
+    private void embedPlaceBatch(List<Long> placeIds) {
+        List<Place> places = placeRepository.findAllById(placeIds);
+
+        List<EmbeddingRequest> requests = places.stream()
+                .map(place -> new EmbeddingRequest(place.getId(), place.getDescription(), null, null))
+                .toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place", requests);
+
+        places.forEach(place -> place.setEmbeddedAt(LocalDateTime.now()));
+        placeRepository.saveAll(places);
     }
     // Accom Create
-    public void embedAccom(Integer accomId) {
-        Accommodation accom = accomRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
-        List<String> amenities = accom.getAmenityList().stream().map(Amenity::getName).toList();
+    private void embedAccom(Long accomId) {
+        Accommodation accom = accommodationRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
+
+        List<String> amenities = accom.getAmenities().stream().map(Amenity::getName).toList();
+
         EmbeddingRequest request = new EmbeddingRequest(accomId, accom.getDescription(), null, amenities);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom", request);
+
+        accom.setEmbeddedAt(LocalDateTime.now());
+        accommodationRepository.save(accom);
     }
     // Accom Batch Create
-    public void embedAccomBatch(List<Integer> accomIds) {
-        List<EmbeddingRequest> requests = accomIds.stream().map(accomId -> {
-            Accommodation accom = accomRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
-            List<String> amenities = accom.getAmenityList().stream().map(Amenity::getName).toList();
-            return new EmbeddingRequest(accomId, accom.getDescription(), null, amenities);
+    private void embedAccomBatch(List<Long> accomIds) {
+        List<Accommodation> accommodations = accommodationRepository.findAllById(accomIds);
+
+        List<EmbeddingRequest> requests = accommodations.stream().map(accom -> {
+            List<String> amenities = accom.getAmenities().stream().map(Amenity::getName).toList();
+            return new EmbeddingRequest(accom.getId(), accom.getDescription(), null, amenities);
         }).toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom", requests);
+
+        accommodations.forEach(accom -> accom.setEmbeddedAt(LocalDateTime.now()));
+        accommodationRepository.saveAll(accommodations);
     }
     // Restaurant Create
-    public void embedRestaurant(Integer restaurantId) {
+    public void embedRestaurant(Long restaurantId) {
         Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(IllegalArgumentException::new);
-        List<String> restaurantMenuList = restaurant.getRestaurantMenuList().stream().map(RestaurantMenu::getRestaurantMenuName).toList();
+
+        List<String> restaurantMenuList = restaurant.getMenus().stream().map(Menu::getName).toList();
+
         EmbeddingRequest request = new EmbeddingRequest(restaurantId, restaurant.getDescription(), null, restaurantMenuList);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant", request);
+
+        restaurant.setEmbeddedAt(LocalDateTime.now());
+        restaurantRepository.save(restaurant);
     }
     // Restaurant Batch Create
-    public void embedRestaurantBatch(List<Integer> restaurantIds) {
-        List<EmbeddingRequest> requests = restaurantIds.stream().map(restaurantId -> {
-            Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(IllegalArgumentException::new);
-            List<String> restaurantMenuList = restaurant.getRestaurantMenuList().stream().map(RestaurantMenu::getRestaurantMenuName).toList();
-            return new EmbeddingRequest(restaurantId, restaurant.getDescription(), null, restaurantMenuList);
+    public void embedRestaurantBatch(List<Long> restaurantIds) {
+        List<Restaurant> restaurants = restaurantRepository.findAllById(restaurantIds);
+
+        List<EmbeddingRequest> requests = restaurants.stream().map(restaurant -> {
+            List<String> restaurantMenuList = restaurant.getMenus().stream().map(Menu::getName).toList();
+            return new EmbeddingRequest(restaurant.getId(), restaurant.getDescription(), null, restaurantMenuList);
         }).toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant", requests);
+
+        restaurants.forEach(restaurant -> restaurant.setEmbeddedAt(LocalDateTime.now()));
+        restaurantRepository.saveAll(restaurants);
     }
     // PlaceReview Create
-    public void embedPlaceReview(Integer placeReviewId) {
-        PlaceReview placeReview = placeReviewRepository.findById(placeReviewId).orElseThrow(IllegalArgumentException::new);
-        EmbeddingRequest request = new EmbeddingRequest(placeReviewId, placeReview.getComment(), null, null);
+    public void embedPlaceReview(Long placeReviewId) {
+        PlaceReview review = placeReviewRepository.findById(placeReviewId).orElseThrow(IllegalArgumentException::new);
+        // metadata 에 fk 함께 임베딩 하기
+        HashMap<String, Long> metadata = new HashMap<>();
+        metadata.put("fk", review.getPlace().getId());
+
+        EmbeddingRequest request = new EmbeddingRequest(placeReviewId, review.getComment(), metadata, null);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place_review", request);
+
+        review.setEmbeddedAt(LocalDateTime.now());
+        placeReviewRepository.save(review);
     }
     // PlaceReview Batch Create
-    public void embedPlaceReviewBatch(List<Integer> placeReviewIds) {
-        List<EmbeddingRequest> requests = placeReviewIds.stream().map(placeReviewId -> {
-            PlaceReview placeReview = placeReviewRepository.findById(placeReviewId).orElseThrow(IllegalArgumentException::new);
-            return new EmbeddingRequest(placeReviewId, placeReview.getComment(), null, null);
+    public void embedPlaceReviewBatch(List<Long> placeReviewIds) {
+        List<PlaceReview> reviews = placeReviewRepository.findAllById(placeReviewIds);
+
+        List<EmbeddingRequest> requests = reviews.stream().map(placeReview -> {
+            HashMap<String, Long> metadata = new HashMap<>();
+            metadata.put("fk", placeReview.getPlace().getId());
+            return new EmbeddingRequest(placeReview.getId(), placeReview.getComment(), metadata, null);
         }).toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place_review", requests);
+
+        reviews.forEach(placeReview -> placeReview.setEmbeddedAt(LocalDateTime.now()));
+        placeReviewRepository.saveAll(reviews);
     }
     // AccomReview Create
-    public void embedAccomReview(Integer accomReviewId) {
-        AccomReview accomReview = accomReviewRepository.findById(accomReviewId).orElseThrow(IllegalArgumentException::new);
-        EmbeddingRequest request = new EmbeddingRequest(accomReviewId, accomReview.getComment(), null, null);
+    public void embedAccomReview(Long accomReviewId) {
+        AccommodationReview review = accommodationReviewRepository.findById(accomReviewId).orElseThrow(IllegalArgumentException::new);
+
+        HashMap<String, Long> metadata = new HashMap<>();
+        metadata.put("fk", review.getAccommodation().getId());
+
+        EmbeddingRequest request = new EmbeddingRequest(accomReviewId, review.getComment(), metadata, null);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom_review", request);
+
+        review.setEmbeddedAt(LocalDateTime.now());
+        accommodationReviewRepository.save(review);
     }
     // AccomReview Batch Create
-    public void embedAccomReviewBatch(List<Integer> accomReviewIds) {
-        List<EmbeddingRequest> requests = accomReviewIds.stream().map(accomReviewId -> {
-            AccomReview accomReview = accomReviewRepository.findById(accomReviewId).orElseThrow(IllegalArgumentException::new);
-            return new EmbeddingRequest(accomReviewId, accomReview.getComment(), null, null);
+    public void embedAccomReviewBatch(List<Long> accomReviewIds) {
+        List<AccommodationReview> reviews = accommodationReviewRepository.findAllById(accomReviewIds);
+
+        List<EmbeddingRequest> requests = reviews.stream().map(review -> {
+            HashMap<String, Long> metadata = new HashMap<>();
+            metadata.put("fk", review.getAccommodation().getId());
+            return new EmbeddingRequest(review.getId(), review.getComment(), metadata, null);
         }).toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom_review", requests);
+
+        reviews.forEach(review -> review.setEmbeddedAt(LocalDateTime.now()));
+        accommodationReviewRepository.saveAll(reviews);
     }
     // RestaurantReview Create
-    public void embedRestaurantReview(Integer restaurantReviewId) {
+    public void embedRestaurantReview(Long restaurantReviewId) {
         RestaurantReview restaurantReview = restaurantReviewRepository.findById(restaurantReviewId).orElseThrow(IllegalArgumentException::new);
-        EmbeddingRequest request = new EmbeddingRequest(restaurantReviewId, restaurantReview.getComment(), null, null);
+
+        HashMap<String, Long> metadata = new HashMap<>();
+        metadata.put("fk", restaurantReview.getRestaurant().getId());
+
+        EmbeddingRequest request = new EmbeddingRequest(restaurantReviewId, restaurantReview.getComment(), metadata, null);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant_review", request);
+
+        restaurantReview.setEmbeddedAt(LocalDateTime.now());
+        restaurantReviewRepository.save(restaurantReview);
     }
     // RestaurantReview Batch Create
-    public void embedRestaurantReviewBatch(List<Integer> restaurantReviewIds) {
-        List<EmbeddingRequest> requests = restaurantReviewIds.stream().map(restaurantReviewId -> {
-            RestaurantReview restaurantReview = restaurantReviewRepository.findById(restaurantReviewId).orElseThrow(IllegalArgumentException::new);
-            return new EmbeddingRequest(restaurantReviewId, restaurantReview.getComment(), null, null);
+    public void embedRestaurantReviewBatch(List<Long> restaurantReviewIds) {
+        List<RestaurantReview> reviews = restaurantReviewRepository.findAllById(restaurantReviewIds);
+
+        List<EmbeddingRequest> requests = reviews.stream().map(review -> {
+            HashMap<String, Long> metadata = new HashMap<>();
+            metadata.put("fk", review.getRestaurant().getId());
+            return new EmbeddingRequest(review.getId(), review.getComment(), metadata, null);
         }).toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant_review", requests);
+
+        reviews.forEach(review -> review.setEmbeddedAt(LocalDateTime.now()));
+        restaurantReviewRepository.saveAll(reviews);
     }
 
-    public void delete(String domain, Integer pk) {
+    public void delete(Domains domain, Long pk) {
         switch (domain) {
-            case "place" -> deletePlace(pk);
-            case "accom" -> deleteAccom(pk);
-            case "restaurant" -> deleteRestaurant(pk);
-            case "place_review" -> deletePlaceReview(pk);
-            case "accom_review" -> deleteAccomReview(pk);
-            case "restaurant_review" -> deleteRestaurantReview(pk);
+            case PLACE -> deletePlace(pk);
+            case ACCOM -> deleteAccom(pk);
+            case RESTAURANT -> deleteRestaurant(pk);
+            case PLACE_REVIEW -> deletePlaceReview(pk);
+            case ACCOM_REVIEW -> deleteAccomReview(pk);
+            case RESTAURANT_REVIEW -> deleteRestaurantReview(pk);
             default -> throw new IllegalArgumentException("잘못된 도메인입니다.");
         }
     }
 
-    public void deleteBatch(String domain, List<Integer> pks) {
+    public void deleteBatch(Domains domain, List<Long> pks) {
         switch (domain) {
-            case "place" -> deletePlaceBatch(pks);
-            case "accom" -> deleteAccomBatch(pks);
-            case "restaurant" -> deleteRestaurantBatch(pks);
-            case "place_review" -> deletePlaceReviewBatch(pks);
-            case "accom_review" -> deleteAccomReviewBatch(pks);
-            case "restaurant_review" -> deleteRestaurantReviewBatch(pks);
+            case PLACE -> deletePlaceBatch(pks);
+            case ACCOM -> deleteAccomBatch(pks);
+            case RESTAURANT -> deleteRestaurantBatch(pks);
+            case PLACE_REVIEW -> deletePlaceReviewBatch(pks);
+            case ACCOM_REVIEW -> deleteAccomReviewBatch(pks);
+            case RESTAURANT_REVIEW -> deleteRestaurantReviewBatch(pks);
             default -> throw new IllegalArgumentException("잘못된 도메인입니다.");
         }
     }
     // Accom Delete
-    public void deleteAccom(Integer accomId) {
+    public void deleteAccom(Long accomId) {
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom&pk=" + accomId);
     }
     // Accom Batch Delete
-    public void deleteAccomBatch(List<Integer> accomIds) {
+    public void deleteAccomBatch(List<Long> accomIds) {
         String queryString = accomIds.stream().map(accomId -> "pks=" + accomId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom&" + queryString);
     }
     // Place Delete
-    public void deletePlace(Integer placeId) {
+    public void deletePlace(Long placeId) {
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=place&pk=" + placeId);
     }
     // Place Batch Delete
-    public void deletePlaceBatch(List<Integer> placeIds) {
+    public void deletePlaceBatch(List<Long> placeIds) {
         String queryString = placeIds.stream().map(placeId -> "pks=" + placeId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom&" + queryString);
     }
     // Restaurant Delete
-    public void deleteRestaurant(Integer restaurantId) {
+    public void deleteRestaurant(Long restaurantId) {
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant&pk=" + restaurantId);
     }
     // Restaurant Batch Delete
-    public void deleteRestaurantBatch(List<Integer> restaurantIds) {
+    public void deleteRestaurantBatch(List<Long> restaurantIds) {
         String queryString = restaurantIds.stream().map(restaurantId -> "pks=" + restaurantId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant&pk=" + queryString);
     }
     // AccomReview Delete
-    public void deleteAccomReview(Integer accomReviewId) {
+    public void deleteAccomReview(Long accomReviewId) {
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom_review&pk=" + accomReviewId);
     }
     // AccomReview Batch Delete
-    public void deleteAccomReviewBatch(List<Integer> accomReviewIds) {
+    public void deleteAccomReviewBatch(List<Long> accomReviewIds) {
         String queryString = accomReviewIds.stream().map(accomReviewId -> "pks=" + accomReviewId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom_review&pk=" + queryString);
     }
     // PlaceReview Delete
-    public void deletePlaceReview(Integer placeReviewId) {
+    public void deletePlaceReview(Long placeReviewId) {
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=place_review&pk=" + placeReviewId);
     }
     // PlaceReview Batch Delete
-    public void deletePlaceReviewBatch(List<Integer> placeReviewIds) {
+    public void deletePlaceReviewBatch(List<Long> placeReviewIds) {
         String queryString = placeReviewIds.stream().map(placeReviewId -> "pks=" + placeReviewId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=place_review&pk=" + queryString);
     }
     // RestaurantReview Delete
-    public void deleteRestaurantReview(Integer restaurantReviewId) {
+    public void deleteRestaurantReview(Long restaurantReviewId) {
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant_review&pk=" + restaurantReviewId);
     }
     // RestaurantReview Batch Delete
-    public void deleteRestaurantReviewBatch(List<Integer> restaurantReviewIds) {
+    public void deleteRestaurantReviewBatch(List<Long> restaurantReviewIds) {
         String queryString = restaurantReviewIds.stream().map(restaurantReviewId -> "pks=" + restaurantReviewId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant_review&pk=" + queryString);
     }
-
 }

@@ -18,17 +18,16 @@ class Domains(str, Enum):
     PLACE_REVIEW = "place_review"
     RESTAURANT_REVIEW = "restaurant_review"
     ACCOM_REVIEW = "accom_review"
-    TRAVEL_STYLE = "travel_style"
 
     @property
     def get_subs(self) -> List[str]:
         match self:
             case Domains.PLACE:
-                return [Domains.PLACE_REVIEW.value, Domains.TRAVEL_STYLE.value]
+                return [Domains.PLACE_REVIEW.value]
             case Domains.RESTAURANT:
-                return [Domains.RESTAURANT_REVIEW.value, Domains.TRAVEL_STYLE.value]
+                return [Domains.RESTAURANT_REVIEW.value]
             case Domains.ACCOM:
-                return [Domains.ACCOM_REVIEW.value, Domains.TRAVEL_STYLE.value]
+                return [Domains.ACCOM_REVIEW.value]
             case _:
                 return []
 
@@ -69,8 +68,6 @@ class Domains(str, Enum):
                 return "RESTAURANT_REVIEW: 'RESTAURANT' 도메인에 속한 특정 식당이나 카페에 대한 사용자 리뷰나 평가 정보입니다. 맛, 분위기, 서비스 등에 대한 의견을 포함하며 필터링 조건으로 활용됩니다."
             case Domains.ACCOM_REVIEW:
                 return "ACCOM_REVIEW: 'ACCOM' 도메인에 속한 특정 숙소에 대한 사용자 리뷰나 평가 정보입니다. 청결도, 편의시설, 위치 등에 대한 경험을 담고 있으며 필터링에 사용됩니다."
-            case Domains.TRAVEL_STYLE:
-                return "TRAVEL_STYLE: 특정 사용자의 일반적인 여행 선호도나 스타일을 나타냅니다. (예: '가성비 여행', '럭셔리 여행', '가족 여행', '혼자 여행') 이 정보는 사용자의 취향에 맞는 메인 도메인(장소, 식당, 숙소)을 추천하는 데 사용됩니다."
             case _:
                 # 모든 Enum 멤버가 위에 명시되어 있으므로, 실제로는 이 코드가 실행될 일이 없습니다.
                 return "알 수 없는 도메인입니다."

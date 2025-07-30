@@ -1,39 +1,36 @@
 package com.fastcampus.toyproject4_team4.entity.place;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "place_review")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Data
+@Table(name = "PLACE_REVIEW")
 public class PlaceReview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "review_id")
+    @Column(name = "REVIEW_ID")
     private Long id;
 
-    @Column(name = "raiting")
+    @Column(name = "RATING")
     private Byte rating;
 
-    @Column(name = "comment", columnDefinition = "TEXT")
+    @Column(name = "COMMENT", columnDefinition = "TEXT", nullable = false)
     private String comment;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
-    @Column(name = "embedded_at")
+    @Column(name = "EMBEDDED_AT")
     private LocalDateTime embeddedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "place_id")
+    @JoinColumn(name = "PLACE_ID")
     private Place place;
 }

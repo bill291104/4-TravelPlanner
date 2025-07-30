@@ -3,9 +3,7 @@ package com.fastcampus.toyproject4_team4.entity.restaurant;
 import com.fastcampus.toyproject4_team4.entity.Hashtag;
 import com.fastcampus.toyproject4_team4.entity.TravelStyle;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,63 +11,62 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "restaurant")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Data
+@Table(name = "RESTAURANT")
 public class Restaurant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "restaurant_id")
+    @Column(name = "RESTAURANT_ID")
     private Long id;
 
-    @Column(name = "name", length = 100)
+    @Column(name = "NAME", nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "DESCRIPTION", columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(name = "lat", precision = 10, scale = 8)
-    private BigDecimal lat;
+    @Column(name = "LATITUDE", precision = 9, scale = 6, nullable = false)
+    private BigDecimal latitude;
 
-    @Column(name = "lon", precision = 11, scale = 8)
-    private BigDecimal lon;
+    @Column(name = "LONGITUDE", precision = 9, scale = 6, nullable = false)
+    private BigDecimal longitude;
 
-    @Column(name = "address")
+    @Column(name = "ADDRESS")
     private String address;
 
-    @Column(name = "op_time", columnDefinition = "TEXT")
+    @Column(name = "OP_TIME", columnDefinition = "TEXT")
     private String opTime;
 
-    @Column(name = "tel", length = 50)
+    @Column(name = "TEL", length = 50)
     private String tel;
 
-    @Column(name = "michelin_star")
+    @Column(name = "MICHELIN_STAR")
     private Byte michelinStar;
 
-    @Column(name = "url")
+    @Column(name = "URL")
     private String url;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
-    @Column(name = "embedded_at")
+    @Column(name = "EMBEDDED_AT")
     private LocalDateTime embeddedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "travel_style_id")
+    @JoinColumn(name = "TRAVEL_STYLE_ID")
     private TravelStyle travelStyle;
 
     @OneToMany(mappedBy = "restaurant")
-    private List<RestaurantReview> restaurantReviewList = new ArrayList<>();
+    private List<RestaurantReview> restaurantReviews = new ArrayList<>();
 
     @OneToMany(mappedBy = "restaurant")
-    private List<RestaurantMenu> restaurantMenuList = new ArrayList<>();
+    private List<Menu> menus = new ArrayList<>();
 
-    @JoinTable(name = "restaurant_hashtag", joinColumns = @JoinColumn(name = "restaurant_id"), inverseJoinColumns = @JoinColumn(name = "hashtag_id"))
     @ManyToMany
+    @JoinTable(name = "RESTAURANT_HASHTAG", joinColumns = @JoinColumn(name = "RESTAURANT_ID"), inverseJoinColumns = @JoinColumn(name = "HASHTAG_ID"))
     private List<Hashtag> hashtags = new ArrayList<>();
 }

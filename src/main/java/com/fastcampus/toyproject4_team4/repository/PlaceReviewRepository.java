@@ -6,6 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Integer> {
+public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> {
     Page<PlaceReview> findByPlace(Place place, Pageable pageable);
 }

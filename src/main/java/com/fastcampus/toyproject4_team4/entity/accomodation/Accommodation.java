@@ -3,9 +3,7 @@ package com.fastcampus.toyproject4_team4.entity.accomodation;
 import com.fastcampus.toyproject4_team4.entity.Hashtag;
 import com.fastcampus.toyproject4_team4.entity.TravelStyle;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,79 +12,78 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "accommodation")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Data
+@Table(name = "ACCOMMODATION")
 public class Accommodation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "accom_id")
+    @Column(name = "ACCOMMODATION_ID")
     private Long id;
 
-    @Column(name = "name")
+    @Column(name = "NAME", nullable = false)
     private String name;
 
-    @Column(name = "type")
+    @Column(name = "TYPE")
     private String type;
 
-    @Column(name = "star_rating")
+    @Column(name = "STAR_RATING")
     private Byte starRating;
 
-    @Column(name = "min_price", precision = 19, scale = 2)
+    @Column(name = "MIN_PRICE", precision = 19, scale = 2)
     private BigDecimal minPrice;
 
-    @Column(name = "min_capacity")
+    @Column(name = "MIN_CAPACITY")
     private Integer minCapacity;
 
-    @Column(name = "max_capacity")
+    @Column(name = "MAX_CAPACITY")
     private Integer maxCapacity;
 
-    @Column(name = "address")
+    @Column(name = "ADDRESS")
     private String address;
 
-    @Column(name = "latitude", precision = 9, scale = 6)
+    @Column(name = "LATITUDE", precision = 9, scale = 6, nullable = false)
     private BigDecimal latitude;
 
-    @Column(name = "longitude", precision = 9, scale = 6)
+    @Column(name = "LONGITUDE", precision = 9, scale = 6, nullable = false)
     private BigDecimal longitude;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "DESCRIPTION", columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(name = "avg_rating", precision = 3, scale = 2)
+    @Column(name = "AVG_RATING", precision = 3, scale = 2)
     private BigDecimal avgRating;
 
-    @Column(name = "checkin_time")
+    @Column(name = "CHECKIN_TIME")
     private LocalTime checkinTime;
 
-    @Column(name = "checkout_time")
+    @Column(name = "CHECKOUT_TIME")
     private LocalTime checkoutTime;
 
-    @Column(name = "url")
+    @Column(name = "URL")
     private String url;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
-    @Column(name = "embedded_at")
+    @Column(name = "EMBEDDED_AT")
     private LocalDateTime embeddedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "travel_style_id")
+    @JoinColumn(name = "TRAVEL_STYLE_ID")
     private TravelStyle travelStyle;
 
-    @OneToMany(mappedBy = "accommodation")
-    private List<Amenity> amenityList = new ArrayList<>();
-
-    @OneToMany(mappedBy = "accommodation")
-    private List<AccomReview> accomReviewList = new ArrayList<>();
-
-    @JoinTable(name = "accom_hashtag", joinColumns = @JoinColumn(name = "accom_id"), inverseJoinColumns = @JoinColumn(name = "hashtag_id"))
     @ManyToMany
-    private List<Hashtag> hashtags = new ArrayList<>();
+    @JoinTable(name = "ACCOMMODATION_AMENITY", joinColumns = @JoinColumn(name = "ACCOMMODATION_ID"), inverseJoinColumns = @JoinColumn(name = "AMENITY_ID"))
+    private List<Amenity> amenities = new ArrayList<>();
 
+    @OneToMany(mappedBy = "accommodation")
+    private List<AccommodationReview> accommodationReviews = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(name = "ACCOMMODATION_HASHTAG", joinColumns = @JoinColumn(name = "ACCOMMODATION_ID"), inverseJoinColumns = @JoinColumn(name = "HASHTAG_ID"))
+    private List<Hashtag> hashtags = new ArrayList<>();
 }

@@ -1,44 +1,52 @@
 package com.fastcampus.toyproject4_team4.entity;
 
+import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
+import com.fastcampus.toyproject4_team4.entity.place.Place;
+import com.fastcampus.toyproject4_team4.entity.restaurant.Restaurant;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "travel_style")
-@Getter
-@EntityListeners(AuditingEntityListener.class)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Data
+@Table(name = "TRAVEL_STYLE")
 public class TravelStyle {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "travel_style_id")
+    @Column(name = "TRAVEL_STYLE_ID")
     private Long id;
 
-    @Column(name = "name", length = 255)
+    @Column(name = "NAME", nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "DESCRIPTION", columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(name = "rec_season", length = 255)
+    @Column(name = "REC_SEASON")
     private String recSeason;
 
-    @Column(name = "age_group", length = 255)
+    @Column(name = "AGE_GROUP")
     private String ageGroup;
 
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
+    @Column(name = "EMBEDDED_AT")
+    private LocalDateTime embeddedAt;
+
+    @OneToMany(mappedBy = "travelStyle")
+    private List<Place> places = new ArrayList<>();
+
+    @OneToMany(mappedBy = "travelStyle")
+    private List<Accommodation> accommodations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "travelStyle")
+    private List<Restaurant> restaurants = new ArrayList<>();
 }

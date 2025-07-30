@@ -6,6 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface RestaurantReviewRepository extends JpaRepository<RestaurantReview, Integer> {
+public interface RestaurantReviewRepository extends JpaRepository<RestaurantReview, Long> {
     Page<RestaurantReview> findByRestaurant(Restaurant restaurant, Pageable pageable);
 }

@@ -1,22 +1,23 @@
 package com.fastcampus.toyproject4_team4.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.Data;
 
-@Getter
-@Setter
 @Entity
+@Data
+@Table(name = "SCENARIO")
 public class Scenario {
+
     @Id
-    @Column(name = "CODE", unique = true, nullable = false)
+    @Column(name = "CODE")
     private String code;
 
-    @Column(name = "NAME", nullable = false)
+    @Column(name = "NAME", nullable = false, unique = true)
     private String name;
 
-    @Column(name = "DESCRIPTION", nullable = false)
+    @Column(name = "DESCRIPTION")
     private String description;
+
+    @OneToOne(mappedBy = "scenario")
+    private Prompt prompt;
 }
