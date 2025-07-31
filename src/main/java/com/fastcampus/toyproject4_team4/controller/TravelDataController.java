@@ -47,11 +47,12 @@ public class TravelDataController {
             log.info("비어있는 도메인: {}", emptyDomain.getName());
             response = travelDataService.getQuestion(emptyDomain);
         }
+        System.out.println(td);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/answer")
-    public ResponseEntity<DetailResponse> handleAnswer(AnswerRequest request) {
+    public ResponseEntity<DetailResponse> handleAnswer(@RequestBody AnswerRequest request) { //<<애너테이션추가 by 먕
         log.info("Handle Answer Request\nRequest: {}", request);
 
         // 도메인 추출

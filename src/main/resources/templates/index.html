@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>🤖 네가 짜조 🏝️</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* 👉 인트로 화면 정중앙 정렬 */
+        .intro {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        .start-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #10a37f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .start-btn:hover {
+            background-color: #0f8d6b;
+        }
+
+        /* 👉 채팅 화면 */
+        .chat-container {
+            display: none; /* 처음엔 숨김 */
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            /* 👉 여기 추가 */
+            width: 50%;         /* 너비를 화면의 50%로 */
+            margin: 0 auto;     /* 수평 가운데 정렬 */
+        }
+
+        .chat-header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .chat-box {
+            height: 400px;
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            background-color: white;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column; /* 아래에서 위로 쌓이게 */
+            justify-content: flex-end; /* ✅ 하단 정렬 추가 */
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .input-area button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #10a37f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .input-area button:hover {
+            background-color: #0f8d6b;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ✅ 인트로 화면 -->
+<div class="intro" id="intro">
+    <div class="logo">💬</div>
+    <div class="title">네가 짜조 챗봇에 오신 걸 환영해요</div>
+    <div class="subtitle">🔎 가고 싶은 여행지나 여행 플랜에 대해 물어보세요!</div>
+    <button class="start-btn" onclick="startChat()">대화 시작하기 🖱️</button>
+</div>
+
+<!-- ✅ 채팅 화면 -->
+<div class="chat-container" id="chat-container">
+    <div class="chat-header">🤖 네가 짜조 🏝️</div>
+    <div id="chat-box" class="chat-box"></div>
+    <div class="input-area" id="input-area">
+        <input type="text" id="user-input" placeholder="메시지를 입력하세요" />
+        <button onclick="sendMessage()">전송</button>
+    </div>
+</div>
+
+<script>
+    // ✅ 대화 누적 배열 (전역)
+    const conversationHistory = [];
+
+    function startChat() {
+        // 인트로 숨기고 채팅창 보이게
+        document.getElementById("intro").style.display = "none";
+        document.getElementById("chat-container").style.display = "flex";
+
+        // ✅ 첫 챗봇 메시지
+        const chatBox = document.getElementById("chat-box");
+        const botMessage = document.createElement("div");
+        botMessage.textContent = "🤖 안녕하세요! 어디로 여행가고 싶으신가요?";
+        chatBox.appendChild(botMessage);
+        // ✅ 스크롤 아래로 이동 (DOM이 그려진 다음에!)
+        setTimeout(() => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 0);
+
+
+        // ✅ 누적
+        conversationHistory.push({
+            role: "assistant",
+            content: "안녕하세요! 어디로 여행가고 싶으신가요?"
+        });
+
+        // ✅ 서버에서 TravelData 초기화 요청
+        fetch("/init")
+            .then(res => res.json())
+            .then(data => {
+                const isEmpty = !data || Object.values(data).every(v => v === null || v === '');
+
+                if (isEmpty) {
+                    console.log("빈 객체입니다. 초기 안내창 또는 리셋 로직 실행!");
+                    // 👉 필요 시 안내 문구 추가 가능
+                } else {
+                    console.log("데이터 있음. 화면에 표시 가능:", data);
+                }
+
+                // // ✅ 첫 챗봇 메시지
+                // const chatBox = document.getElementById("chat-box");
+                // const botMessage = document.createElement("div");
+                // botMessage.textContent = "🤖 안녕하세요! 어디로 여행가고 싶으신가요?";
+                // chatBox.appendChild(botMessage);
+                // chatBox.scrollTop = chatBox.scrollHeight;
+                //
+                //
+                // // ✅ 누적
+                // conversationHistory.push({
+                //     role: "assistant",
+                //     content: "안녕하세요! 어디로 여행가고 싶으신가요?"
+                // });
+
+                // ✅ 입력창 및 버튼 처리
+                document.getElementById("input-area").style.display = "block";
+                document.querySelector(".start-btn").style.display = "none";
+
+                // ✅ 엔터 입력 이벤트 (한 번만 등록되게)
+                const input = document.getElementById("user-input");
+                if (!input.hasAttribute("data-listener-added")) {
+                    input.setAttribute("data-listener-added", "true");
+                    input.addEventListener("keydown", function(event) {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                            event.preventDefault();
+                            sendMessage();
+                        }
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("초기화 실패", err);
+            });
+    }
+
+    function sendMessage() {
+        const input = document.getElementById("user-input");
+        const message = input.value.trim();
+        if (message === "") return;
+        input.value = "";
+
+        const chatBox = document.getElementById("chat-box");
+
+        // ✅ 사용자 메시지 출력
+        const userMessage = document.createElement("div");
+        userMessage.textContent = "🙋‍♀️ 나: " + message;
+        chatBox.appendChild(userMessage);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // ✅ 누적
+        conversationHistory.push({
+            role: "user",
+            content: message
+        });
+
+
+        fetch("/answer", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                context: message
+            })
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error("FastAPI 연결 실패");
+            }
+            return res.json();
+        })
+        .then(data => {
+            const reply = data.reply
+            if (!reply) return; // ✅ reply가 없으면 아무 것도 출력하지 않음
+
+
+            const botMessage = document.createElement("div");
+            botMessage.textContent = "🤖 여봇: " + reply;
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            conversationHistory.push({
+                role: "assistant",
+                content: reply
+            });
+        })
+        .catch(err => {
+            const botMessage = document.createElement("div");
+            botMessage.textContent = "🤖 여봇: AI 서버 연결이 꺼져 있어요. 자동 추천은 생략됩니다!";
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            conversationHistory.push({
+                role: "assistant",
+                content: "AI 서버 연결이 꺼져 있어요. 자동 추천은 생략됩니다!"
+            });
+            console.error("❌ /answer 호출 실패:", err);
+
+        //✅ 2단계: /check 호출
+            return fetch("/check", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    places: [],
+                    accommodations: [],
+                    restaurants: [],
+                    conversationHistory: conversationHistory
+                })
+            })
+        .then(res => res.json())
+        .then(data => {
+            // travelData는 응답 안에 포함되어야 함
+            const travelData = data.travelData;
+
+            const isComplete =
+                travelData &&
+                travelData.places && travelData.places.length > 0 &&
+                travelData.accommodations && travelData.accommodations.length > 0 &&
+                travelData.restaurants && travelData.restaurants.length > 0;
+
+            if (isComplete) {
+                // ✅ 3단계: /plan 호출 계획 수립 요청
+                fetch("/plan", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(travelData)
+                })
+                    .then(res => res.json())
+                    .then(planData => {
+                        const planMessage = document.createElement("div");
+                        planMessage.textContent = "🤖 여봇: 최종 여행 계획은 다음과 같습니다!\n" + planData.plan;
+                        chatBox.appendChild(planMessage);
+                        chatBox.scrollTop = chatBox.scrollHeight;
+
+                        conversationHistory.push({
+                            role: "assistant",
+                            content: planData.plan
+                        });
+                    })
+            } else {
+                // ✅ 빈 도메인 있음 재질문 필요 → answer로 이동
+                    console.log("✅ 빈 도메인 있음 → /answer 흐름으로 전환됨");
+
+                    const botMessage = document.createElement("div");
+                    botMessage.textContent = "🤖 여봇: " + data.reply;
+                    chatBox.appendChild(botMessage);
+                    chatBox.scrollTop = chatBox.scrollHeight
+
+                    conversationHistory.push({
+                        role: "assistant",
+                        content: data.reply
+                    });
+                }
+        })
+        .catch(err => {
+            console.error("서버 응답 실패 (/check):", err);
+        });
+        });
+    }
+</script>
