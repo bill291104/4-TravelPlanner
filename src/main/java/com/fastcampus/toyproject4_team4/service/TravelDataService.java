@@ -1,9 +1,7 @@
 package com.fastcampus.toyproject4_team4.service;
 
 import com.fastcampus.toyproject4_team4.Domains;
-import com.fastcampus.toyproject4_team4.dto.ChatMessage;
-import com.fastcampus.toyproject4_team4.dto.ChatResponse;
-import com.fastcampus.toyproject4_team4.dto.TravelData;
+import com.fastcampus.toyproject4_team4.dto.*;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
 import com.fastcampus.toyproject4_team4.entity.place.Place;
 import com.fastcampus.toyproject4_team4.entity.restaurant.Restaurant;
@@ -28,7 +26,11 @@ public class TravelDataService {
     }
 
     public TravelData createTravelData(){
-        return new TravelData(new ArrayList<Place>(), new ArrayList<Accommodation>(), new ArrayList<Restaurant>(), new ArrayList<ChatMessage>());
+        return new TravelData(
+                new ArrayList<PlaceDetail>(),
+                new ArrayList<AccommodationDetail>(),
+                new ArrayList<RestaurantDetail>(),
+                new ArrayList<ChatMessage>());
     }
 
     public Domains checkEmptyDomain(TravelData td){

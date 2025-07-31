@@ -1,7 +1,7 @@
 package  com.fastcampus.toyproject4_team4.service;
 
 import com.fastcampus.toyproject4_team4.Domains;
-import com.fastcampus.toyproject4_team4.dto.EmbeddingRequest;
+import com.fastcampus.toyproject4_team4.dto.*;
 import com.fastcampus.toyproject4_team4.entity.accomodation.AccommodationReview;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Amenity;
@@ -43,9 +43,9 @@ public class ManagerService {
 
     public Page<?> getAllMain(Domains mainDomain, Pageable pageable) {
         return switch (mainDomain) {
-            case PLACE -> getAllPlaces(pageable);
-            case RESTAURANT -> getAllRestaurants(pageable);
-            case ACCOM -> getAllAccoms(pageable);
+            case PLACE -> getAllPlaces(pageable).map(PlaceDetail::from);
+            case RESTAURANT -> getAllRestaurants(pageable).map(RestaurantDetail::from);
+            case ACCOM -> getAllAccoms(pageable).map(AccommodationDetail::from);
             default -> throw new IllegalArgumentException("잘못된 메인 도메인입니다.");
         };
     }
@@ -65,9 +65,9 @@ public class ManagerService {
 
     public Page<?> getAllSub(Domains subDomain, Long pk, Pageable pageable) {
         return switch (subDomain) {
-            case PLACE_REVIEW -> getReviewsByPlace(pk, pageable);
-            case ACCOM_REVIEW -> getReviewsByAccom(pk, pageable);
-            case RESTAURANT_REVIEW -> getReviewsByRestaurant(pk, pageable);
+            case PLACE_REVIEW -> getReviewsByPlace(pk, pageable).map(PlaceReviewDetail::from);
+            case ACCOM_REVIEW -> getReviewsByAccom(pk, pageable).map(AccommodationReviewDetail::from);
+            case RESTAURANT_REVIEW -> getReviewsByRestaurant(pk, pageable).map(RestaurantReviewDetail::from);
             default -> throw new IllegalArgumentException("잘못된 서브 도메인입니다.");
         };
     }

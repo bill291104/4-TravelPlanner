@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class MainController {
 
     @GetMapping
-    public String hoGome(){
+    public String goHome(){
         return "index";
     }
 }
