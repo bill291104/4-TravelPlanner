@@ -1,5 +1,6 @@
 package com.fastcampus.toyproject4_team4.service;
 
+import com.fastcampus.toyproject4_team4.exceptions.FastAPIExceptionUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
@@ -29,10 +30,10 @@ public class APIUtil {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
+            FastAPIExceptionUtil.handleErrorResponse(response);
             return objectMapper.readValue(response.body(), responseTypeRef);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            log.error("Send Post Request Failed");
             throw new IllegalArgumentException(e.getMessage());
         }
     }
@@ -46,10 +47,10 @@ public class APIUtil {
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            FastAPIExceptionUtil.handleErrorResponse(response);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            log.error("Send Post Request Failed");
             throw new IllegalArgumentException(e.getMessage());
         }
     }
@@ -62,10 +63,10 @@ public class APIUtil {
                     .header("Content-Type", "application/json")
                     .DELETE()
                     .build();
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-            //TODO 응답을 분석하고 커스텀 예외를 던지는 utility 메서드 호출 handleErrorResponse(response);
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            FastAPIExceptionUtil.handleErrorResponse(response);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            log.error("Send Delete Request Failed");
             throw new IllegalArgumentException(e.getMessage());
         }
     }

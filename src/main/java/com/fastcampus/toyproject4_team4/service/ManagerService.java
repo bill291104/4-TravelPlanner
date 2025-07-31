@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -121,7 +122,7 @@ public class ManagerService {
         // 관련 데이터 조립
         List<String> relatedContent = List.of(travelStyle, hashTags);
         // 임베딩 요청 객체 만들기
-        EmbeddingRequest request = new EmbeddingRequest(placeId, place.getDescription(), null, relatedContent);
+        EmbeddingRequest request = new EmbeddingRequest(placeId, place.getDescription(), new HashMap<>(), relatedContent);
         // 요청, 응답
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place", request);
         // 임베딩 시간 기록 하기
@@ -137,10 +138,10 @@ public class ManagerService {
                     String travelStyle = place.getTravelStyle().getName() + ": " + place.getTravelStyle().getDescription();
                     String hashTags = "해시 태그\n" + place.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
                     List<String> relatedContent = List.of(travelStyle, hashTags);
-                    return new EmbeddingRequest(place.getId(), place.getDescription(), null, relatedContent);
+                    return new EmbeddingRequest(place.getId(), place.getDescription(), new HashMap<>(), relatedContent);
                 })
                 .toList();
-        APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place", requests);
+        APIUtil.sendPostRequest(fastApiUrl + "/embedding/batch?domain=place", requests);
 
         places.forEach(place -> place.setEmbeddedAt(LocalDateTime.now()));
         placeRepository.saveAll(places);
@@ -157,7 +158,7 @@ public class ManagerService {
         // 관련 데이터 조립
         List<String> relatedContent = List.of(amenities, travelStyle, hashTags);
 
-        EmbeddingRequest request = new EmbeddingRequest(accomId, accom.getDescription(), null, relatedContent);
+        EmbeddingRequest request = new EmbeddingRequest(accomId, accom.getDescription(), new HashMap<>(), relatedContent);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom", request);
 
         accom.setEmbeddedAt(LocalDateTime.now());
@@ -172,9 +173,9 @@ public class ManagerService {
             String travelStyle = accom.getTravelStyle().getName() + ": " + accom.getTravelStyle().getDescription();
             String hashTags = "해시 태그\n" + accom.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
             List<String> relatedContent = List.of(amenities, travelStyle, hashTags);
-            return new EmbeddingRequest(accom.getId(), accom.getDescription(), null, relatedContent);
+            return new EmbeddingRequest(accom.getId(), accom.getDescription(), new HashMap<>(), relatedContent);
         }).toList();
-        APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom", requests);
+        APIUtil.sendPostRequest(fastApiUrl + "/embedding/batch?domain=accom", requests);
 
         accommodations.forEach(accom -> accom.setEmbeddedAt(LocalDateTime.now()));
         accommodationRepository.saveAll(accommodations);
@@ -192,7 +193,7 @@ public class ManagerService {
         // 관련 데이터 조립
         List<String> relatedContent = List.of(restaurantMenus, travelStyle, hashTags);
 
-        EmbeddingRequest request = new EmbeddingRequest(restaurantId, restaurant.getDescription(), null, relatedContent);
+        EmbeddingRequest request = new EmbeddingRequest(restaurantId, restaurant.getDescription(), new HashMap<>(), relatedContent);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant", request);
 
         restaurant.setEmbeddedAt(LocalDateTime.now());
@@ -207,9 +208,9 @@ public class ManagerService {
             String travelStyle = restaurant.getTravelStyle().getName() + ": " + restaurant.getTravelStyle().getDescription();
             String hashTags = "해시 태그\n" + restaurant.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
             List<String> relatedContent = List.of(restaurantMenus, travelStyle, hashTags);
-            return new EmbeddingRequest(restaurant.getId(), restaurant.getDescription(), null, relatedContent);
+            return new EmbeddingRequest(restaurant.getId(), restaurant.getDescription(), new HashMap<>(), relatedContent);
         }).toList();
-        APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant", requests);
+        APIUtil.sendPostRequest(fastApiUrl + "/embedding/batch?domain=restaurant", requests);
 
         restaurants.forEach(restaurant -> restaurant.setEmbeddedAt(LocalDateTime.now()));
         restaurantRepository.saveAll(restaurants);
@@ -221,7 +222,7 @@ public class ManagerService {
         HashMap<String, Long> metadata = new HashMap<>();
         metadata.put("fk", review.getPlace().getId());
 
-        EmbeddingRequest request = new EmbeddingRequest(placeReviewId, review.getComment(), metadata, null);
+        EmbeddingRequest request = new EmbeddingRequest(placeReviewId, review.getComment(), metadata, new ArrayList<>());
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place_review", request);
 
         review.setEmbeddedAt(LocalDateTime.now());
@@ -234,9 +235,9 @@ public class ManagerService {
         List<EmbeddingRequest> requests = reviews.stream().map(placeReview -> {
             HashMap<String, Long> metadata = new HashMap<>();
             metadata.put("fk", placeReview.getPlace().getId());
-            return new EmbeddingRequest(placeReview.getId(), placeReview.getComment(), metadata, null);
+            return new EmbeddingRequest(placeReview.getId(), placeReview.getComment(), metadata, new ArrayList<>());
         }).toList();
-        APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place_review", requests);
+        APIUtil.sendPostRequest(fastApiUrl + "/embedding/batch?domain=place_review", requests);
 
         reviews.forEach(placeReview -> placeReview.setEmbeddedAt(LocalDateTime.now()));
         placeReviewRepository.saveAll(reviews);
@@ -248,7 +249,7 @@ public class ManagerService {
         HashMap<String, Long> metadata = new HashMap<>();
         metadata.put("fk", review.getAccommodation().getId());
 
-        EmbeddingRequest request = new EmbeddingRequest(accomReviewId, review.getComment(), metadata, null);
+        EmbeddingRequest request = new EmbeddingRequest(accomReviewId, review.getComment(), metadata, new ArrayList<>());
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom_review", request);
 
         review.setEmbeddedAt(LocalDateTime.now());
@@ -261,9 +262,9 @@ public class ManagerService {
         List<EmbeddingRequest> requests = reviews.stream().map(review -> {
             HashMap<String, Long> metadata = new HashMap<>();
             metadata.put("fk", review.getAccommodation().getId());
-            return new EmbeddingRequest(review.getId(), review.getComment(), metadata, null);
+            return new EmbeddingRequest(review.getId(), review.getComment(), metadata, new ArrayList<>());
         }).toList();
-        APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom_review", requests);
+        APIUtil.sendPostRequest(fastApiUrl + "/embedding/batch?domain=accom_review", requests);
 
         reviews.forEach(review -> review.setEmbeddedAt(LocalDateTime.now()));
         accommodationReviewRepository.saveAll(reviews);
@@ -275,7 +276,7 @@ public class ManagerService {
         HashMap<String, Long> metadata = new HashMap<>();
         metadata.put("fk", restaurantReview.getRestaurant().getId());
 
-        EmbeddingRequest request = new EmbeddingRequest(restaurantReviewId, restaurantReview.getComment(), metadata, null);
+        EmbeddingRequest request = new EmbeddingRequest(restaurantReviewId, restaurantReview.getComment(), metadata, new ArrayList<>());
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant_review", request);
 
         restaurantReview.setEmbeddedAt(LocalDateTime.now());
@@ -288,9 +289,9 @@ public class ManagerService {
         List<EmbeddingRequest> requests = reviews.stream().map(review -> {
             HashMap<String, Long> metadata = new HashMap<>();
             metadata.put("fk", review.getRestaurant().getId());
-            return new EmbeddingRequest(review.getId(), review.getComment(), metadata, null);
+            return new EmbeddingRequest(review.getId(), review.getComment(), metadata, new ArrayList<>());
         }).toList();
-        APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant_review", requests);
+        APIUtil.sendPostRequest(fastApiUrl + "/embedding/batch?domain=restaurant_review", requests);
 
         reviews.forEach(review -> review.setEmbeddedAt(LocalDateTime.now()));
         restaurantReviewRepository.saveAll(reviews);
@@ -326,7 +327,7 @@ public class ManagerService {
     // Accom Batch Delete
     public void deleteAccomBatch(List<Long> accomIds) {
         String queryString = accomIds.stream().map(accomId -> "pks=" + accomId).collect(Collectors.joining("&"));
-        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom&" + queryString);
+        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=accom&" + queryString);
     }
     // Place Delete
     public void deletePlace(Long placeId) {
@@ -335,7 +336,7 @@ public class ManagerService {
     // Place Batch Delete
     public void deletePlaceBatch(List<Long> placeIds) {
         String queryString = placeIds.stream().map(placeId -> "pks=" + placeId).collect(Collectors.joining("&"));
-        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom&" + queryString);
+        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=accom&" + queryString);
     }
     // Restaurant Delete
     public void deleteRestaurant(Long restaurantId) {
@@ -344,7 +345,7 @@ public class ManagerService {
     // Restaurant Batch Delete
     public void deleteRestaurantBatch(List<Long> restaurantIds) {
         String queryString = restaurantIds.stream().map(restaurantId -> "pks=" + restaurantId).collect(Collectors.joining("&"));
-        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant&pk=" + queryString);
+        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=restaurant&pk=" + queryString);
     }
     // AccomReview Delete
     public void deleteAccomReview(Long accomReviewId) {
@@ -353,7 +354,7 @@ public class ManagerService {
     // AccomReview Batch Delete
     public void deleteAccomReviewBatch(List<Long> accomReviewIds) {
         String queryString = accomReviewIds.stream().map(accomReviewId -> "pks=" + accomReviewId).collect(Collectors.joining("&"));
-        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom_review&pk=" + queryString);
+        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=accom_review&pk=" + queryString);
     }
     // PlaceReview Delete
     public void deletePlaceReview(Long placeReviewId) {
@@ -362,7 +363,7 @@ public class ManagerService {
     // PlaceReview Batch Delete
     public void deletePlaceReviewBatch(List<Long> placeReviewIds) {
         String queryString = placeReviewIds.stream().map(placeReviewId -> "pks=" + placeReviewId).collect(Collectors.joining("&"));
-        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=place_review&pk=" + queryString);
+        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=place_review&pk=" + queryString);
     }
     // RestaurantReview Delete
     public void deleteRestaurantReview(Long restaurantReviewId) {
@@ -371,6 +372,6 @@ public class ManagerService {
     // RestaurantReview Batch Delete
     public void deleteRestaurantReviewBatch(List<Long> restaurantReviewIds) {
         String queryString = restaurantReviewIds.stream().map(restaurantReviewId -> "pks=" + restaurantReviewId).collect(Collectors.joining("&"));
-        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant_review&pk=" + queryString);
+        APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=restaurant_review&pk=" + queryString);
     }
 }
