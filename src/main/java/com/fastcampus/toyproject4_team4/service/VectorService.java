@@ -2,6 +2,7 @@ package com.fastcampus.toyproject4_team4.service;
 
 import com.fastcampus.toyproject4_team4.Domains;
 import com.fastcampus.toyproject4_team4.dto.FastAPISimilaritySearchRequest;
+import com.fastcampus.toyproject4_team4.dto.FastAPISimilaritySearchResponse;
 import com.fastcampus.toyproject4_team4.entity.Prompt;
 import com.fastcampus.toyproject4_team4.entity.Scenario;
 import com.fastcampus.toyproject4_team4.repository.PromptRepository;
@@ -34,8 +35,8 @@ public class VectorService {
 
         FastAPISimilaritySearchRequest payload = new FastAPISimilaritySearchRequest(context, targetDomain, keywords, prompt.getPromptTemplate());
         log.debug("Payload: {}", payload);
-        List<Long> pks = APIUtil.sendPostRequest(fastApiUrl + "/vector_ss/pks", payload, new TypeReference<List<Long>>() {});
+        FastAPISimilaritySearchResponse pks = APIUtil.sendPostRequest(fastApiUrl + "/vector_ss/pks", payload, new TypeReference<>() {});
         log.debug("PK Extract Successfully\nResult\npks: {}", pks);
-        return pks;
+        return pks.pks();
     }
 }

@@ -30,12 +30,14 @@ public class ExtractService {
         // EXT_001: 도메인 추출을 위한 llm 프롬프트 조회
         Scenario scenario = scenarioRepository.findByCode("EXT_001").orElseThrow(IllegalArgumentException::new);
         Prompt prompt = promptRepository.findByScenario(scenario).orElseThrow(IllegalArgumentException::new);
+        System.out.println(prompt.getPromptTemplate());
 
         // 추출 결과가 될 도메인 후보들
-        List<Domains> domains = Domains.getMains();
+        List<String> domains = Domains.getMains().stream().map(Domains::getName).toList();
 
         // FastAPI 서버로 보낼 요청 body 생성
         FastAPIDomainExtractRequest payload = new FastAPIDomainExtractRequest(context, domains, prompt.getPromptTemplate());
+        System.out.println(payload);
         log.debug("Payload: {}", payload);
 
         // 요청, 응답
