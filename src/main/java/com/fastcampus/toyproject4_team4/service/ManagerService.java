@@ -2,6 +2,7 @@ package  com.fastcampus.toyproject4_team4.service;
 
 import com.fastcampus.toyproject4_team4.Domains;
 import com.fastcampus.toyproject4_team4.dto.*;
+import com.fastcampus.toyproject4_team4.entity.Hashtag;
 import com.fastcampus.toyproject4_team4.entity.accomodation.AccommodationReview;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Amenity;
@@ -113,8 +114,14 @@ public class ManagerService {
     private void embedPlace(Long placeId) {
         // 영속성 엔티티 가져 오기
         Place place = placeRepository.findById(placeId).orElseThrow(IllegalArgumentException::new);
+        // 관련 데이터: 여행 스타일
+        String travelStyle = place.getTravelStyle().getName() + ": " + place.getTravelStyle().getDescription();
+        // 관련 데이터: 해시 태그
+        String hashTags = "해시 태그\n" + place.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
+        // 관련 데이터 조립
+        List<String> relatedContent = List.of(travelStyle, hashTags);
         // 임베딩 요청 객체 만들기
-        EmbeddingRequest request = new EmbeddingRequest(placeId, place.getDescription(), null, null);
+        EmbeddingRequest request = new EmbeddingRequest(placeId, place.getDescription(), null, relatedContent);
         // 요청, 응답
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place", request);
         // 임베딩 시간 기록 하기
@@ -126,7 +133,12 @@ public class ManagerService {
         List<Place> places = placeRepository.findAllById(placeIds);
 
         List<EmbeddingRequest> requests = places.stream()
-                .map(place -> new EmbeddingRequest(place.getId(), place.getDescription(), null, null))
+                .map(place -> {
+                    String travelStyle = place.getTravelStyle().getName() + ": " + place.getTravelStyle().getDescription();
+                    String hashTags = "해시 태그\n" + place.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
+                    List<String> relatedContent = List.of(travelStyle, hashTags);
+                    return new EmbeddingRequest(place.getId(), place.getDescription(), null, relatedContent);
+                })
                 .toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=place", requests);
 
@@ -136,10 +148,16 @@ public class ManagerService {
     // Accom Create
     private void embedAccom(Long accomId) {
         Accommodation accom = accommodationRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
+        // 관련 데이터: 편의 시설
+        String amenities = "편의 시설: " + accom.getAmenities().stream().map(Amenity::getName).collect(Collectors.joining(", "));
+        // 관련 데이터: 여행 스타일
+        String travelStyle = accom.getTravelStyle().getName() + ": " + accom.getTravelStyle().getDescription();
+        // 관련 데이터: 해시 태그
+        String hashTags = "해시 태그\n" + accom.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
+        // 관련 데이터 조립
+        List<String> relatedContent = List.of(amenities, travelStyle, hashTags);
 
-        List<String> amenities = accom.getAmenities().stream().map(Amenity::getName).toList();
-
-        EmbeddingRequest request = new EmbeddingRequest(accomId, accom.getDescription(), null, amenities);
+        EmbeddingRequest request = new EmbeddingRequest(accomId, accom.getDescription(), null, relatedContent);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom", request);
 
         accom.setEmbeddedAt(LocalDateTime.now());
@@ -150,8 +168,11 @@ public class ManagerService {
         List<Accommodation> accommodations = accommodationRepository.findAllById(accomIds);
 
         List<EmbeddingRequest> requests = accommodations.stream().map(accom -> {
-            List<String> amenities = accom.getAmenities().stream().map(Amenity::getName).toList();
-            return new EmbeddingRequest(accom.getId(), accom.getDescription(), null, amenities);
+            String amenities = "편의 시설: " + accom.getAmenities().stream().map(Amenity::getName).collect(Collectors.joining(", "));
+            String travelStyle = accom.getTravelStyle().getName() + ": " + accom.getTravelStyle().getDescription();
+            String hashTags = "해시 태그\n" + accom.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
+            List<String> relatedContent = List.of(amenities, travelStyle, hashTags);
+            return new EmbeddingRequest(accom.getId(), accom.getDescription(), null, relatedContent);
         }).toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=accom", requests);
 
@@ -162,9 +183,16 @@ public class ManagerService {
     public void embedRestaurant(Long restaurantId) {
         Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(IllegalArgumentException::new);
 
-        List<String> restaurantMenuList = restaurant.getMenus().stream().map(Menu::getName).toList();
+        // 관련 데이터: 메뉴
+        String restaurantMenus = "메뉴: " + restaurant.getMenus().stream().map(Menu::getName).collect(Collectors.joining(", "));
+        // 관련 데이터: 여행 스타일
+        String travelStyle = restaurant.getTravelStyle().getName() + ": " + restaurant.getTravelStyle().getDescription();
+        // 관련 데이터: 해시 태그
+        String hashTags = "해시 태그\n" + restaurant.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
+        // 관련 데이터 조립
+        List<String> relatedContent = List.of(restaurantMenus, travelStyle, hashTags);
 
-        EmbeddingRequest request = new EmbeddingRequest(restaurantId, restaurant.getDescription(), null, restaurantMenuList);
+        EmbeddingRequest request = new EmbeddingRequest(restaurantId, restaurant.getDescription(), null, relatedContent);
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant", request);
 
         restaurant.setEmbeddedAt(LocalDateTime.now());
@@ -175,8 +203,11 @@ public class ManagerService {
         List<Restaurant> restaurants = restaurantRepository.findAllById(restaurantIds);
 
         List<EmbeddingRequest> requests = restaurants.stream().map(restaurant -> {
-            List<String> restaurantMenuList = restaurant.getMenus().stream().map(Menu::getName).toList();
-            return new EmbeddingRequest(restaurant.getId(), restaurant.getDescription(), null, restaurantMenuList);
+            String restaurantMenus = "메뉴: " + restaurant.getMenus().stream().map(Menu::getName).collect(Collectors.joining(", "));
+            String travelStyle = restaurant.getTravelStyle().getName() + ": " + restaurant.getTravelStyle().getDescription();
+            String hashTags = "해시 태그\n" + restaurant.getHashtags().stream().map(Hashtag::getContent).collect(Collectors.joining(", "));
+            List<String> relatedContent = List.of(restaurantMenus, travelStyle, hashTags);
+            return new EmbeddingRequest(restaurant.getId(), restaurant.getDescription(), null, relatedContent);
         }).toList();
         APIUtil.sendPostRequest(fastApiUrl + "/embedding?domain=restaurant", requests);
 
