@@ -54,4 +54,8 @@ public class Place {
     @ManyToMany
     @JoinTable(name = "PLACE_HASHTAG", joinColumns = @JoinColumn(name = "PLACE_ID"), inverseJoinColumns = @JoinColumn(name = "HASHTAG_ID"))
     private List<Hashtag> hashtags = new ArrayList<>();
+
+    // ✅ 추가된 필드 (중복 지역 제거용)
+    @Column(name = "google_place_id", length = 100, unique = true)
+    private String googlePlaceId;
 }
