@@ -2,9 +2,6 @@ package com.fastcampus.toyproject4_team4.service;
 
 import com.fastcampus.toyproject4_team4.Domains;
 import com.fastcampus.toyproject4_team4.dto.*;
-import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
-import com.fastcampus.toyproject4_team4.entity.place.Place;
-import com.fastcampus.toyproject4_team4.entity.restaurant.Restaurant;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -27,10 +24,10 @@ public class TravelDataService {
 
     public TravelData createTravelData(){
         return new TravelData(
-                new ArrayList<PlaceDetail>(),
-                new ArrayList<AccommodationDetail>(),
-                new ArrayList<RestaurantDetail>(),
-                new ArrayList<ChatMessage>());
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>());
     }
 
     public Domains checkEmptyDomain(TravelData td){
