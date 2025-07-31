@@ -17,6 +17,6 @@ public class Prompt {
     @JoinColumn(name = "SCENARIO_CODE")
     private Scenario scenario;
 
-    @Column(name = "PROMPT_TEMPLATE", nullable = false)
+    @Column(name = "PROMPT_TEMPLATE", columnDefinition = "TEXT", nullable = false)
     private String promptTemplate;
 }
