@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ManagerService {
 
     // FastAPI 서버 주소 주입
@@ -43,6 +42,7 @@ public class ManagerService {
     private final AccommodationRepository accommodationRepository;
     private final AccommodationReviewRepository accommodationReviewRepository;
 
+    @Transactional
     public Page<?> getAllMain(Domains mainDomain, Pageable pageable) {
         return switch (mainDomain) {
             case PLACE -> getAllPlaces(pageable).map(PlaceDetail::from);
@@ -65,6 +65,7 @@ public class ManagerService {
         return accommodationRepository.findAll(pageable);
     }
 
+    @Transactional
     public Page<?> getAllSub(Domains subDomain, Long pk, Pageable pageable) {
         return switch (subDomain) {
             case PLACE_REVIEW -> getReviewsByPlace(pk, pageable).map(PlaceReviewDetail::from);
@@ -90,6 +91,7 @@ public class ManagerService {
         return restaurantReviewRepository.findByRestaurant(restaurant, pageable);
     }
 
+    @Transactional
     public void embedding(Domains domain, Long pk) {
         switch (domain) {
             case PLACE -> embedPlace(pk);
@@ -101,6 +103,7 @@ public class ManagerService {
         }
     }
 
+    @Transactional
     public void embeddingBatch(Domains domain, List<Long> pks) {
         switch (domain) {
             case PLACE -> embedPlaceBatch(pks);
@@ -181,7 +184,7 @@ public class ManagerService {
         accommodationRepository.saveAll(accommodations);
     }
     // Restaurant Create
-    public void embedRestaurant(Long restaurantId) {
+    private void embedRestaurant(Long restaurantId) {
         Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(IllegalArgumentException::new);
 
         // 관련 데이터: 메뉴
@@ -200,7 +203,7 @@ public class ManagerService {
         restaurantRepository.save(restaurant);
     }
     // Restaurant Batch Create
-    public void embedRestaurantBatch(List<Long> restaurantIds) {
+    private void embedRestaurantBatch(List<Long> restaurantIds) {
         List<Restaurant> restaurants = restaurantRepository.findAllById(restaurantIds);
 
         List<EmbeddingRequest> requests = restaurants.stream().map(restaurant -> {
@@ -216,7 +219,7 @@ public class ManagerService {
         restaurantRepository.saveAll(restaurants);
     }
     // PlaceReview Create
-    public void embedPlaceReview(Long placeReviewId) {
+    private void embedPlaceReview(Long placeReviewId) {
         PlaceReview review = placeReviewRepository.findById(placeReviewId).orElseThrow(IllegalArgumentException::new);
         // metadata 에 fk 함께 임베딩 하기
         HashMap<String, Long> metadata = new HashMap<>();
@@ -229,7 +232,7 @@ public class ManagerService {
         placeReviewRepository.save(review);
     }
     // PlaceReview Batch Create
-    public void embedPlaceReviewBatch(List<Long> placeReviewIds) {
+    private void embedPlaceReviewBatch(List<Long> placeReviewIds) {
         List<PlaceReview> reviews = placeReviewRepository.findAllById(placeReviewIds);
 
         List<EmbeddingRequest> requests = reviews.stream().map(placeReview -> {
@@ -243,7 +246,7 @@ public class ManagerService {
         placeReviewRepository.saveAll(reviews);
     }
     // AccomReview Create
-    public void embedAccomReview(Long accomReviewId) {
+    private void embedAccomReview(Long accomReviewId) {
         AccommodationReview review = accommodationReviewRepository.findById(accomReviewId).orElseThrow(IllegalArgumentException::new);
 
         HashMap<String, Long> metadata = new HashMap<>();
@@ -256,7 +259,7 @@ public class ManagerService {
         accommodationReviewRepository.save(review);
     }
     // AccomReview Batch Create
-    public void embedAccomReviewBatch(List<Long> accomReviewIds) {
+    private void embedAccomReviewBatch(List<Long> accomReviewIds) {
         List<AccommodationReview> reviews = accommodationReviewRepository.findAllById(accomReviewIds);
 
         List<EmbeddingRequest> requests = reviews.stream().map(review -> {
@@ -270,7 +273,7 @@ public class ManagerService {
         accommodationReviewRepository.saveAll(reviews);
     }
     // RestaurantReview Create
-    public void embedRestaurantReview(Long restaurantReviewId) {
+    private void embedRestaurantReview(Long restaurantReviewId) {
         RestaurantReview restaurantReview = restaurantReviewRepository.findById(restaurantReviewId).orElseThrow(IllegalArgumentException::new);
 
         HashMap<String, Long> metadata = new HashMap<>();
@@ -283,7 +286,7 @@ public class ManagerService {
         restaurantReviewRepository.save(restaurantReview);
     }
     // RestaurantReview Batch Create
-    public void embedRestaurantReviewBatch(List<Long> restaurantReviewIds) {
+    private void embedRestaurantReviewBatch(List<Long> restaurantReviewIds) {
         List<RestaurantReview> reviews = restaurantReviewRepository.findAllById(restaurantReviewIds);
 
         List<EmbeddingRequest> requests = reviews.stream().map(review -> {
@@ -297,6 +300,7 @@ public class ManagerService {
         restaurantReviewRepository.saveAll(reviews);
     }
 
+    @Transactional
     public void delete(Domains domain, Long pk) {
         switch (domain) {
             case PLACE -> deletePlace(pk);
@@ -309,6 +313,7 @@ public class ManagerService {
         }
     }
 
+    @Transactional
     public void deleteBatch(Domains domain, List<Long> pks) {
         switch (domain) {
             case PLACE -> deletePlaceBatch(pks);
@@ -321,57 +326,93 @@ public class ManagerService {
         }
     }
     // Accom Delete
-    public void deleteAccom(Long accomId) {
+    private void deleteAccom(Long accomId) {
+        Accommodation accommodation = accommodationRepository.findById(accomId).orElseThrow(IllegalArgumentException::new);
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom&pk=" + accomId);
+        accommodation.setEmbeddedAt(null);
+        accommodationRepository.save(accommodation);
     }
     // Accom Batch Delete
-    public void deleteAccomBatch(List<Long> accomIds) {
+    private void deleteAccomBatch(List<Long> accomIds) {
+        List<Accommodation> accommodations = accommodationRepository.findAllById(accomIds);
         String queryString = accomIds.stream().map(accomId -> "pks=" + accomId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=accom&" + queryString);
+        accommodations.forEach(accommodation -> accommodation.setEmbeddedAt(null));
+        accommodationRepository.saveAll(accommodations);
     }
     // Place Delete
-    public void deletePlace(Long placeId) {
+    private void deletePlace(Long placeId) {
+        Place place = placeRepository.findById(placeId).orElseThrow(IllegalArgumentException::new);
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=place&pk=" + placeId);
+        place.setEmbeddedAt(null);
+        placeRepository.save(place);
     }
     // Place Batch Delete
-    public void deletePlaceBatch(List<Long> placeIds) {
+    private void deletePlaceBatch(List<Long> placeIds) {
+        List<Place> places = placeRepository.findAllById(placeIds);
         String queryString = placeIds.stream().map(placeId -> "pks=" + placeId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=accom&" + queryString);
+        places.forEach(place -> place.setEmbeddedAt(null));
+        placeRepository.saveAll(places);
     }
     // Restaurant Delete
-    public void deleteRestaurant(Long restaurantId) {
+    private void deleteRestaurant(Long restaurantId) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(IllegalArgumentException::new);
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant&pk=" + restaurantId);
+        restaurant.setEmbeddedAt(null);
+        restaurantRepository.save(restaurant);
     }
     // Restaurant Batch Delete
-    public void deleteRestaurantBatch(List<Long> restaurantIds) {
+    private void deleteRestaurantBatch(List<Long> restaurantIds) {
+        List<Restaurant> restaurants = restaurantRepository.findAllById(restaurantIds);
         String queryString = restaurantIds.stream().map(restaurantId -> "pks=" + restaurantId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=restaurant&pk=" + queryString);
+        restaurants.forEach(restaurant -> restaurant.setEmbeddedAt(null));
+        restaurantRepository.saveAll(restaurants);
     }
     // AccomReview Delete
-    public void deleteAccomReview(Long accomReviewId) {
+    private void deleteAccomReview(Long accomReviewId) {
+        AccommodationReview review = accommodationReviewRepository.findById(accomReviewId).orElseThrow(IllegalArgumentException::new);
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=accom_review&pk=" + accomReviewId);
+        review.setEmbeddedAt(null);
+        accommodationReviewRepository.save(review);
     }
     // AccomReview Batch Delete
-    public void deleteAccomReviewBatch(List<Long> accomReviewIds) {
+    private void deleteAccomReviewBatch(List<Long> accomReviewIds) {
+        List<AccommodationReview> reviews = accommodationReviewRepository.findAllById(accomReviewIds);
         String queryString = accomReviewIds.stream().map(accomReviewId -> "pks=" + accomReviewId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=accom_review&pk=" + queryString);
+        reviews.forEach(review -> review.setEmbeddedAt(null));
+        accommodationReviewRepository.saveAll(reviews);
     }
     // PlaceReview Delete
-    public void deletePlaceReview(Long placeReviewId) {
+    private void deletePlaceReview(Long placeReviewId) {
+        PlaceReview review = placeReviewRepository.findById(placeReviewId).orElseThrow(IllegalArgumentException::new);
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=place_review&pk=" + placeReviewId);
+        review.setEmbeddedAt(null);
+        placeReviewRepository.save(review);
     }
     // PlaceReview Batch Delete
-    public void deletePlaceReviewBatch(List<Long> placeReviewIds) {
+    private void deletePlaceReviewBatch(List<Long> placeReviewIds) {
+        List<PlaceReview> reviews = placeReviewRepository.findAllById(placeReviewIds);
         String queryString = placeReviewIds.stream().map(placeReviewId -> "pks=" + placeReviewId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=place_review&pk=" + queryString);
+        reviews.forEach(placeReview -> placeReview.setEmbeddedAt(null));
+        placeReviewRepository.saveAll(reviews);
     }
     // RestaurantReview Delete
-    public void deleteRestaurantReview(Long restaurantReviewId) {
+    private void deleteRestaurantReview(Long restaurantReviewId) {
+        RestaurantReview review = restaurantReviewRepository.findById(restaurantReviewId).orElseThrow(IllegalArgumentException::new);
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding?domain=restaurant_review&pk=" + restaurantReviewId);
+        review.setEmbeddedAt(null);
+        restaurantReviewRepository.save(review);
     }
     // RestaurantReview Batch Delete
-    public void deleteRestaurantReviewBatch(List<Long> restaurantReviewIds) {
+    private void deleteRestaurantReviewBatch(List<Long> restaurantReviewIds) {
+        List<RestaurantReview> reviews = restaurantReviewRepository.findAllById(restaurantReviewIds);
         String queryString = restaurantReviewIds.stream().map(restaurantReviewId -> "pks=" + restaurantReviewId).collect(Collectors.joining("&"));
         APIUtil.sendDeleteRequest(fastApiUrl + "/embedding/batch?domain=restaurant_review&pk=" + queryString);
+        reviews.forEach(restaurantReview -> restaurantReview.setEmbeddedAt(null));
+        restaurantReviewRepository.saveAll(reviews);
     }
 }
