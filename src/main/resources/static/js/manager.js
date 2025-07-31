@@ -68,9 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('메인 도메인 PK를 입력하세요.');
                 return;
             }
-            url = `/manager/sub/${config.apiName}/${currentMainPk}?page=${page}&size=30`;
+            url = `/manager/sub/${config.apiName}/${currentMainPk}?page=${page}&size=100`;
         } else {
-            url = `/manager/main/${config.apiName}?page=${page}&size=30`;
+            url = `/manager/main/${config.apiName}?page=${page}&size=100`;
         }
 
         showLoading(true);

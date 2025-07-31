@@ -103,6 +103,7 @@ public class GlobalExceptionHandler2 {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllException(Exception e, WebRequest request){
         // 개발자를 위한 상세 로그 기록
+        e.printStackTrace();
         log.error("예상치 못한 서버 오류 발생: {}", e.getMessage());
 
 

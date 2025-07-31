@@ -15,6 +15,7 @@ public record TravelStyleDetail(
         LocalDateTime embeddedAt
 ) {
     public static TravelStyleDetail from(TravelStyle travelStyle) {
+        if (travelStyle == null) return null;
         return new TravelStyleDetail(
                 travelStyle.getId(),
                 travelStyle.getName(),
