@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const embedBtn = document.getElementById('embed-btn');
     const updateBtn = document.getElementById('update-btn');
     const deleteBtn = document.getElementById('delete-btn');
+    const embedAllBtn = document.getElementById('embed-all-btn');
+    const updateAllBtn = document.getElementById('update-all-btn');
+    const deleteAllBtn = document.getElementById('delete-all-btn');
     const searchFilterInput = document.getElementById('search-filter-input');
     const tableHead = document.getElementById('data-table-head');
     const tableBody = document.getElementById('data-table-body');
@@ -44,11 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const dt = new Date(dateTimeString);
             if (isNaN(dt.getTime())) return dateTimeString; // Invalid date
 
-            const date = dt.getFullYear() + '/' + 
-                         ('0' + (dt.getMonth() + 1)).slice(-2) + '/' + 
+            const date = dt.getFullYear() + '/' +
+                         ('0' + (dt.getMonth() + 1)).slice(-2) + '/' +
                          ('0' + dt.getDate()).slice(-2);
-            const time = ('0' + dt.getHours()).slice(-2) + ':' + 
-                         ('0' + dt.getMinutes()).slice(-2) + ':' + 
+            const time = ('0' + dt.getHours()).slice(-2) + ':' +
+                         ('0' + dt.getMinutes()).slice(-2) + ':' +
                          ('0' + dt.getSeconds()).slice(-2);
             return `${date}<br>${time}`;
         } catch (e) {
@@ -63,11 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMainPk = pkInputSub.value;
 
         let url;
-        if (isSub) {
-            if (!currentMainPk) {
-                alert('메인 도메인 PK를 입력하세요.');
-                return;
-            }
+        if (isSub && currentMainPk) {
             url = `/manager/sub/${config.apiName}/${currentMainPk}?page=${page}&size=100`;
         } else {
             url = `/manager/main/${config.apiName}?page=${page}&size=100`;
@@ -122,11 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     value = formatDateTime(value);
                 }
 
-                // Format date-time columns
-                if (['created_at', 'updated_at', 'embedded_at'].includes(key)) {
-                    value = formatDateTime(value);
-                }
-
                 return `<td>${value}</td>`;
             }).join('');
             return `
@@ -169,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const domain = domainSelect.value;
-        const url = `/manager/${domain}${selectedPks.length > 1 ? '/batch' : ''}`;
+        const url = `/manager/${domain}/batch`;
         const method = operation === 'embed' ? 'POST' : (operation === 'update' ? 'PATCH' : 'DELETE');
 
         const params = new URLSearchParams();
@@ -188,6 +182,113 @@ document.addEventListener('DOMContentLoaded', () => {
             showLoading(false);
         }
     };
+
+    const fetchAllPks = async () => {
+        const domain = domainSelect.value;
+        const config = domainConfigs[domain];
+        const isSub = config.isSub;
+        const mainPk = pkInputSub.value;
+
+        if (isSub && !mainPk) {
+            // PK가 없는 서브도메인(리뷰)은 메인 API를 호출
+        } else if (isSub && mainPk) {
+            // PK가 있는 서브도메인은 서브 API 호출
+        } else {
+            // 메인 도메인
+        }
+
+        let allPks = [];
+        let page = 0;
+        let totalPages = 1;
+
+        showLoading(true);
+        alert("전체 데이터의 PK를 가져옵니다. 데이터 양에 따라 시간이 소요될 수 있습니다.");
+
+        try {
+            while (page < totalPages) {
+                let url;
+                if (isSub && mainPk) {
+                    url = `/manager/sub/${config.apiName}/${mainPk}?page=${page}&size=100`;
+                } else {
+                    url = `/manager/main/${config.apiName}?page=${page}&size=100`;
+                }
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status} on page ${page}`);
+                const data = await response.json();
+
+                const pks = data.content.map(item => item.id);
+                allPks.push(...pks);
+
+                totalPages = data.totalPages;
+                page++;
+            }
+            return allPks;
+        } catch (error) {
+            console.error('Error fetching all PKs:', error);
+            alert('전체 PK를 가져오는 데 실패했습니다: ' + error.message);
+            return null;
+        } finally {
+            showLoading(false);
+        }
+    };
+
+    const handleFullOperation = async (operation) => {
+        const domain = domainSelect.value;
+        const opKor = operation === 'embed' ? '임베딩' : (operation === 'update' ? '업데이트' : '삭제');
+
+        const confirmation = confirm(`정말로 '${domain}' 도메인의 **전체** 데이터를 ${opKor}하시겠습니까?\n이 작업은 되돌릴 수 없으며, 데이터 양에 따라 매우 오래 걸릴 수 있습니다.`);
+        if (!confirmation) {
+            return;
+        }
+
+        const allPks = await fetchAllPks();
+
+        if (!allPks || allPks.length === 0) {
+            alert('처리할 데이터가 없습니다.');
+            return;
+        }
+
+        showLoading(true);
+        alert(`총 ${allPks.length}개의 데이터에 대한 전체 ${opKor} 작업을 시작합니다.`);
+
+        const chunkSize = 50;
+        let successCount = 0;
+        let errorCount = 0;
+
+        try {
+            for (let i = 0; i < allPks.length; i += chunkSize) {
+                const chunk = allPks.slice(i, i + chunkSize);
+                const url = `/manager/${domain}/batch`;
+                const method = operation === 'embed' ? 'POST' : (operation === 'update' ? 'PATCH' : 'DELETE');
+
+                const params = new URLSearchParams();
+                chunk.forEach(pk => params.append('pks', pk));
+
+                try {
+                    const response = await fetch(`${url}?${params.toString()}`, { method });
+                    if (!response.ok) {
+                        console.error(`Chunk failed (items ${i} to ${i + chunk.length}):`, await response.text());
+                        errorCount += chunk.length;
+                    } else {
+                        successCount += chunk.length;
+                    }
+                } catch (e) {
+                    console.error(`Chunk failed (items ${i} to ${i + chunk.length}):`, e);
+                    errorCount += chunk.length;
+                }
+            }
+
+            alert(`전체 작업 완료!\n성공: ${successCount}개\n실패: ${errorCount}개`);
+
+        } catch (error) {
+            console.error('Full operation error:', error);
+            alert('전체 작업 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            showLoading(false);
+            fetchData(currentPage);
+        }
+    };
+
 
     // --- Event Listeners ---
     domainSelect.addEventListener('change', () => {
@@ -218,6 +319,11 @@ document.addEventListener('DOMContentLoaded', () => {
             handleBatchOperation('delete');
         }
     });
+
+    embedAllBtn.addEventListener('click', () => handleFullOperation('embed'));
+    updateAllBtn.addEventListener('click', () => handleFullOperation('update'));
+    deleteAllBtn.addEventListener('click', () => handleFullOperation('delete'));
+
 
     searchFilterInput.addEventListener('keyup', () => {
         const filterText = searchFilterInput.value.toLowerCase();

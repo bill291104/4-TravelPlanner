@@ -49,6 +49,9 @@ public class ManagerService {
             case PLACE -> getAllPlaces(pageable).map(PlaceDetail::from);
             case RESTAURANT -> getAllRestaurants(pageable).map(RestaurantDetail::from);
             case ACCOM -> getAllAccoms(pageable).map(AccommodationDetail::from);
+            case PLACE_REVIEW -> getAllPlaceReviews(pageable).map(PlaceReviewDetail::from);
+            case RESTAURANT_REVIEW -> getAllRestaurantReviews(pageable).map(RestaurantReviewDetail::from);
+            case ACCOM_REVIEW -> getAllAccomReviews(pageable).map(AccommodationReviewDetail::from);
             default -> throw new IllegalArgumentException("잘못된 메인 도메인입니다.");
         };
     }
@@ -64,6 +67,18 @@ public class ManagerService {
     // Accom Read
     private Page<Accommodation> getAllAccoms(Pageable pageable) {
         return accommodationRepository.findAll(pageable);
+    }
+    // PlaceReview Read
+    private Page<PlaceReview> getAllPlaceReviews(Pageable pageable) {
+        return placeReviewRepository.findAll(pageable);
+    }
+    // RestaurantReview Read
+    private Page<RestaurantReview> getAllRestaurantReviews(Pageable pageable) {
+        return restaurantReviewRepository.findAll(pageable);
+    }
+    // AccomReview Read
+    private Page<AccommodationReview> getAllAccomReviews(Pageable pageable) {
+        return accommodationReviewRepository.findAll(pageable);
     }
 
     @Transactional
