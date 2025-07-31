@@ -7,6 +7,7 @@ public record HashtagDetail(
         String content
 ) {
     public static HashtagDetail from(Hashtag hashtag) {
+        if (hashtag == null) return null;
         return new HashtagDetail(
                 hashtag.getId(),
                 hashtag.getContent()

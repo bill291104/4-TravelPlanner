@@ -23,9 +23,14 @@ async def similarity_search(request: SimilaritySearchRequest):
     분류 후 유사도 검색에 사용될 target_keywords: {request.target_keywords}
     """
     result_dict = await agent.ainvoke({"messages": [("user", message)]})
+
+    print()
+    print()
+    print(result_dict)
     result = result_dict.get("structured_response")
 
-    if not result.get("pks"):
+    # if not result["pks"]:
+    if not result or not result.pks:
         raise NoRelevantDocumentsFoundError(detail=f"{request.context} 에 관련된 결과가 없습니다.")
 
     return result

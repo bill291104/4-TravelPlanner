@@ -66,6 +66,7 @@ record AmenityDetail(
         BigDecimal price
 ) {
     static AmenityDetail from(Amenity amenity) {
+        if (amenity == null) return null;
         return new AmenityDetail(
                 amenity.getId(),
                 amenity.getName(),
