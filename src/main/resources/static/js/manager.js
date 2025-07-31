@@ -23,19 +23,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Configuration ---
     const domainConfigs = {
-        'place': { columns: ['ID', 'Name', 'Address', 'Description'], apiName: 'place' },
-        'restaurant': { columns: ['ID', 'Name', 'Address', 'Category'], apiName: 'restaurant' },
-        'accom': { columns: ['ID', 'Name', 'Address', 'Type'], apiName: 'accom' },
-        'place_review': { columns: ['ID', 'Place ID', 'Rating', 'Content'], apiName: 'place_review', isSub: true },
-        'restaurant_review': { columns: ['ID', 'Restaurant ID', 'Rating', 'Content'], apiName: 'restaurant_review', isSub: true },
-        'accom_review': { columns: ['ID', 'Accom ID', 'Rating', 'Content'], apiName: 'accom_review', isSub: true },
-        'travel_style': { columns: ['ID', 'Style Type', 'Question', 'Answer'], apiName: 'travel_style', isSub: true },
+        'place': { columns: ['ID', 'Name', 'Address', 'Description', 'Created At', 'Updated At', 'Embedded At'], apiName: 'place' },
+        'restaurant': { columns: ['ID', 'Name', 'Address', 'Category', 'Created At', 'Updated At', 'Embedded At'], apiName: 'restaurant' },
+        'accom': { columns: ['ID', 'Name', 'Address', 'Type', 'Created At', 'Updated At', 'Embedded At'], apiName: 'accom' },
+        'place_review': { columns: ['ID', 'Place ID', 'Rating', 'Content', 'Created At', 'Updated At', 'Embedded At'], apiName: 'place_review', isSub: true },
+        'restaurant_review': { columns: ['ID', 'Restaurant ID', 'Rating', 'Content', 'Created At', 'Updated At', 'Embedded At'], apiName: 'restaurant_review', isSub: true },
+        'accom_review': { columns: ['ID', 'Accom ID', 'Rating', 'Content', 'Created At', 'Updated At', 'Embedded At'], apiName: 'accom_review', isSub: true },
+        'travel_style': { columns: ['ID', 'Style Type', 'Question', 'Answer', 'Created At', 'Updated At', 'Embedded At'], apiName: 'travel_style', isSub: true },
     };
 
     // --- Functions ---
 
     const showLoading = (show) => {
         loadingIndicator.style.display = show ? 'block' : 'none';
+    };
+
+    const formatDateTime = (dateTimeString) => {
+        if (!dateTimeString) return '';
+        try {
+            const dt = new Date(dateTimeString);
+            if (isNaN(dt.getTime())) return dateTimeString; // Invalid date
+
+            const date = dt.getFullYear() + '/' + 
+                         ('0' + (dt.getMonth() + 1)).slice(-2) + '/' + 
+                         ('0' + dt.getDate()).slice(-2);
+            const time = ('0' + dt.getHours()).slice(-2) + ':' + 
+                         ('0' + dt.getMinutes()).slice(-2) + ':' + 
+                         ('0' + dt.getSeconds()).slice(-2);
+            return `${date}<br>${time}`;
+        } catch (e) {
+            return dateTimeString; // Return original string if parsing fails
+        }
     };
 
     const fetchData = async (page = 0) => {
@@ -90,8 +108,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tableBody.innerHTML = data.map(item => {
             const rowData = columns.map(col => {
-                const key = col.toLowerCase().replace(' ', '_');
-                return `<td>${item[key] || ''}</td>`;
+                const key = col.toLowerCase().replace(/\s+/g, '_'); // e.g., 'Created At' -> 'created_at'
+                let value = item[key] || '';
+
+                // Handle camelCase keys from backend (e.g., createdAt)
+                if (!value) {
+                    const camelCaseKey = key.replace(/_([a-z])/g, g => g[1].toUpperCase());
+                    value = item[camelCaseKey] || '';
+                }
+
+                // Format date-time columns
+                if (['created_at', 'updated_at', 'embedded_at'].includes(key)) {
+                    value = formatDateTime(value);
+                }
+
+                // Format date-time columns
+                if (['created_at', 'updated_at', 'embedded_at'].includes(key)) {
+                    value = formatDateTime(value);
+                }
+
+                return `<td>${value}</td>`;
             }).join('');
             return `
                 <tr>
