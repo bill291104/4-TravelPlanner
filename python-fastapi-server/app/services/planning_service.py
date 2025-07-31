@@ -42,7 +42,8 @@ async def make_travel_plan(request: PlanningRequest) -> PlanningResponse:
 
     # 1. 실용적인 여행 플래너 (Practical Planner)
     practical_planner = create_react_agent(
-        model=get_llm(temperature=0.1), # 논리적이고 일관된 결과를 위해 온도를 낮게 설정
+        model
+        =get_llm(temperature=0.1), # 논리적이고 일관된 결과를 위해 온도를 낮게 설정
         tools=worker_tools,
         prompt="""당신은 최종 결과물인 `TravelPlan` JSON 객체를 생성하는 임무를 맡은 '실용적인 여행 플래너'입니다.
         
