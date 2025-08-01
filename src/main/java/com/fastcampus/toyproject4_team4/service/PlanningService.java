@@ -1,8 +1,6 @@
 package com.fastcampus.toyproject4_team4.service;
 
-import com.fastcampus.toyproject4_team4.dto.FastAPIMakePlanRequest;
-import com.fastcampus.toyproject4_team4.dto.TravelData;
-import com.fastcampus.toyproject4_team4.dto.TravelPlanResponse;
+import com.fastcampus.toyproject4_team4.dto.*;
 import com.fastcampus.toyproject4_team4.entity.Prompt;
 import com.fastcampus.toyproject4_team4.entity.Scenario;
 import com.fastcampus.toyproject4_team4.repository.PromptRepository;
@@ -30,9 +28,10 @@ public class PlanningService {
         FastAPIMakePlanRequest payload = new FastAPIMakePlanRequest(prompt.getPromptTemplate(),
                 new ArrayList<>(), // userRequests
                 travelData.conversationHistory(),
-                travelData.places() == null ? new ArrayList<>() : travelData.places(),
-                travelData.restaurants() == null ? new ArrayList<>() : travelData.restaurants(),
-                travelData.accommodations() == null ? new ArrayList<>() : travelData.accommodations());
+                travelData.places() == null ? new ArrayList<>() : travelData.places().stream().map(FastAPIPlaceDetail::from).toList(),
+                travelData.restaurants() == null ? new ArrayList<>() : travelData.restaurants().stream().map(FastAPIRestaurantDetail::from).toList(),
+                travelData.accommodations() == null ? new ArrayList<>() : travelData.accommodations().stream().map(FastAPIAccommodationDetail::from).toList()
+        );
         TravelPlanResponse response = apiUtil.sendPostRequest(fastApiUrl + "/planning/make", payload, new TypeReference<>() {});
         return response;
     }

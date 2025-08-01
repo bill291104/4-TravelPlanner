@@ -10,9 +10,9 @@ class BaseTravelDetail(BaseModel):
     'name': 이름, 'lon': 경도, 'lat': 위도, 'exp_cost': 예상 비용, 'description': 설명
     """
     name: str
-    lat: float
-    lon: float
-    exp_cost: float
+    latitude: float
+    longitude: float
+    exp_cost: Optional[float] = None
     description: str
 
 class PlaceDetail(BaseTravelDetail):
@@ -20,32 +20,45 @@ class PlaceDetail(BaseTravelDetail):
     여행지에 대한 세부 정보 스키마입니다.
     RDB의 pk와 같은 고유 식별자를 포함합니다.
     """
-    pk: int
-    category: str | None
-    operating_hours: str | None
-    required_time: str | None
+    id: int
+    address: str | None = None
+    travel_style: str | None = None
+    hashtags: List[str] | None = None
 
 class RestaurantDetail(BaseTravelDetail):
     """
     식당에 대한 세부 정보 스키마입니다.
     RDB의 pk와 같은 고유 식별자를 포함합니다.
     """
-    pk: int
-    cuisine_type: str | None
-    signature_menu: str | None
+    id: int
+    address: str | None = None
     operating_hours: str | None
+    tel: str | None = None
+    michelin_star: str | None = None
+    url: str | None = None
+    travel_style: str | None = None
+    menus: List[str] | None = None
+    hashtags: List[str] | None = None
 
 class AccommodationDetail(BaseTravelDetail):
     """
     숙소에 대한 세부 정보 스키마입니다.
     RDB의 pk와 같은 고유 식별자를 포함합니다.
     """
-    pk: int
-    accom_type: str
-    grade: str | None
+    id: int
+    type: str
+    star_rating: Optional[int] = None
+    min_price: Optional[float] = None
+    min_capacity: Optional[int] = None
+    max_capacity: Optional[int] = None
+    address: str | None = None
+    avg_rating: Optional[float] = None
+    checkin_time: str | None = None
+    checkout_time: str | None = None
+    url: str | None = None
+    travel_style: str | None = None
     amenities: List[str] | None
-    check_in_out_time: str | None
-    booking_url: str | None
+    hashtags: List[str] | None = None
 
 class Event(BaseModel):
     """

@@ -100,7 +100,26 @@ def _execute_tmap_api(start_point: Dict[str, Any], end_point: Dict[str, Any], wa
             error_msg = f"❌ API 요청 실패 (상태코드: {response.status_code})"
             try:
                 error_detail = response.json()
+                # ✅ 특정 오류 코드에 대한 분기 처리 추가
+                if 'error' in error_detail and 'code' in error_detail['error']:
+                    error_code = error_detail['error'].get('code')
+                    point_name = ""
+                    if error_code == '1100' and 'message' in error_detail['error']:
+                        # 오류 메시지에서 어떤 지점이 문제인지 추론
+                        if '출발지' in error_detail['error']['message']:
+                            point_name = start_point['name']
+                        elif '경유지' in error_detail['error']['message']:
+                            # 실제 문제 경유지를 특정하긴 어려우므로 대표적으로 안내
+                            point_name = "경유지 중 하나"
+                        elif '목적지' in error_detail['error']['message']:
+                            point_name = end_point['name']
+
+                        # 에이전트가 이해하기 쉬운 피드백으로 변환
+                        return (f"❌ 경로 탐색 실패: '{point_name}' 지점이 자동차로 접근할 수 없는 곳(예: 산 정상, 해변, 탐방로)일 수 있습니다. "
+                                f"주차장, 탐방로 입구 등 구체적인 장소 이름으로 다시 시도해주세요.")
+
                 error_msg += f"\n상세 오류: {error_detail}"
+
             except:
                 error_msg += f"\n응답 내용: {response.text[:500]}"
             return error_msg
