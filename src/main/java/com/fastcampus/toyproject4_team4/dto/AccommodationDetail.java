@@ -2,6 +2,7 @@ package com.fastcampus.toyproject4_team4.dto;
 
 import com.fastcampus.toyproject4_team4.entity.accomodation.Accommodation;
 import com.fastcampus.toyproject4_team4.entity.accomodation.Amenity;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,9 +25,9 @@ public record AccommodationDetail(
         LocalTime checkinTime,
         LocalTime checkoutTime,
         String url,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        LocalDateTime embeddedAt,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime createdAt,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime updatedAt,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime embeddedAt,
         TravelStyleDetail travelStyle,
         List<AmenityDetail> amenities,
         List<HashtagDetail> hashtags

@@ -134,63 +134,44 @@
 </div>
 
 <script>
-    // ✅ 대화 누적 배열 (전역)
-    const conversationHistory = [];
+    // ✅ 전역 상태 통합 객체
+    const travelRequestBody = {
+        places: [],
+        accommodations: [],
+        restaurants: [],
+        conversationHistory: []
+    };
 
     function startChat() {
-        // 인트로 숨기고 채팅창 보이게
         document.getElementById("intro").style.display = "none";
         document.getElementById("chat-container").style.display = "flex";
 
-        // ✅ 첫 챗봇 메시지
         const chatBox = document.getElementById("chat-box");
         const botMessage = document.createElement("div");
         botMessage.textContent = "🤖 안녕하세요! 어디로 여행가고 싶으신가요?";
         chatBox.appendChild(botMessage);
-        // ✅ 스크롤 아래로 이동 (DOM이 그려진 다음에!)
         setTimeout(() => {
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 0);
 
-
-        // ✅ 누적
-        conversationHistory.push({
+        travelRequestBody.conversationHistory.push({
             role: "assistant",
             content: "안녕하세요! 어디로 여행가고 싶으신가요?"
         });
 
-        // ✅ 서버에서 TravelData 초기화 요청
         fetch("/init")
             .then(res => res.json())
             .then(data => {
                 const isEmpty = !data || Object.values(data).every(v => v === null || v === '');
-
                 if (isEmpty) {
                     console.log("빈 객체입니다. 초기 안내창 또는 리셋 로직 실행!");
-                    // 👉 필요 시 안내 문구 추가 가능
                 } else {
                     console.log("데이터 있음. 화면에 표시 가능:", data);
                 }
 
-                // // ✅ 첫 챗봇 메시지
-                // const chatBox = document.getElementById("chat-box");
-                // const botMessage = document.createElement("div");
-                // botMessage.textContent = "🤖 안녕하세요! 어디로 여행가고 싶으신가요?";
-                // chatBox.appendChild(botMessage);
-                // chatBox.scrollTop = chatBox.scrollHeight;
-                //
-                //
-                // // ✅ 누적
-                // conversationHistory.push({
-                //     role: "assistant",
-                //     content: "안녕하세요! 어디로 여행가고 싶으신가요?"
-                // });
-
-                // ✅ 입력창 및 버튼 처리
                 document.getElementById("input-area").style.display = "block";
                 document.querySelector(".start-btn").style.display = "none";
 
-                // ✅ 엔터 입력 이벤트 (한 번만 등록되게)
                 const input = document.getElementById("user-input");
                 if (!input.hasAttribute("data-listener-added")) {
                     input.setAttribute("data-listener-added", "true");
@@ -215,124 +196,95 @@
 
         const chatBox = document.getElementById("chat-box");
 
-        // ✅ 사용자 메시지 출력
         const userMessage = document.createElement("div");
         userMessage.textContent = "🙋‍♀️ 나: " + message;
         chatBox.appendChild(userMessage);
         chatBox.scrollTop = chatBox.scrollHeight;
 
-        // ✅ 누적
-        conversationHistory.push({
-            role: "user",
-            content: message
-        });
-
+        travelRequestBody.conversationHistory.push({ role: "user", content: message });
 
         fetch("/answer", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                context: message
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ context: message })
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("FastAPI 연결 실패");
+                return res.json();
             })
-        })
-        .then(res => {
-            if (!res.ok) {
-                throw new Error("FastAPI 연결 실패");
-            }
-            return res.json();
-        })
-        .then(data => {
-            const reply = data.reply
-            if (!reply) return; // ✅ reply가 없으면 아무 것도 출력하지 않음
+            .then(answerData => {
+                const reply = answerData.reply || "🤖 응답을 처리하는 중이에요!";
+                travelRequestBody.conversationHistory.push({ role: "assistant", content: reply });
 
+                // ✅ domain과 details 기반으로 travelRequestBody에 저장
+                const domain = answerData.domain;
+                const details = answerData.details || [];
 
-            const botMessage = document.createElement("div");
-            botMessage.textContent = "🤖 여봇: " + reply;
-            chatBox.appendChild(botMessage);
-            chatBox.scrollTop = chatBox.scrollHeight;
+                if (domain === "place") {
+                    travelRequestBody.places = details;
+                } else if (domain === "restaurant") {
+                    travelRequestBody.restaurants = details;
+                } else if (domain === "accom") {
+                    travelRequestBody.accommodations = details;
+                }
 
-            conversationHistory.push({
-                role: "assistant",
-                content: reply
-            });
-        })
-        .catch(err => {
-            const botMessage = document.createElement("div");
-            botMessage.textContent = "🤖 여봇: AI 서버 연결이 꺼져 있어요. 자동 추천은 생략됩니다!";
-            chatBox.appendChild(botMessage);
-            chatBox.scrollTop = chatBox.scrollHeight;
+                const botMessage = document.createElement("div");
+                botMessage.textContent = "🤖 여봇: " + reply;
+                chatBox.appendChild(botMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
 
-            conversationHistory.push({
-                role: "assistant",
-                content: "AI 서버 연결이 꺼져 있어요. 자동 추천은 생략됩니다!"
-            });
-            console.error("❌ /answer 호출 실패:", err);
-
-        //✅ 2단계: /check 호출
-            return fetch("/check", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    places: [],
-                    accommodations: [],
-                    restaurants: [],
-                    conversationHistory: conversationHistory
-                })
-            })
-        .then(res => res.json())
-        .then(data => {
-            // travelData는 응답 안에 포함되어야 함
-            const travelData = data.travelData;
-
-            const isComplete =
-                travelData &&
-                travelData.places && travelData.places.length > 0 &&
-                travelData.accommodations && travelData.accommodations.length > 0 &&
-                travelData.restaurants && travelData.restaurants.length > 0;
-
-            if (isComplete) {
-                // ✅ 3단계: /plan 호출 계획 수립 요청
-                fetch("/plan", {
+                // ✅ answer 응답 포함된 전체 body로 check 전송
+                return fetch("/check", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(travelData)
-                })
-                    .then(res => res.json())
-                    .then(planData => {
-                        const planMessage = document.createElement("div");
-                        planMessage.textContent = "🤖 여봇: 최종 여행 계획은 다음과 같습니다!\n" + planData.plan;
-                        chatBox.appendChild(planMessage);
-                        chatBox.scrollTop = chatBox.scrollHeight;
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(travelRequestBody)
+                });
+            })
 
-                        conversationHistory.push({
-                            role: "assistant",
-                            content: planData.plan
-                        });
-                    })
-            } else {
-                // ✅ 빈 도메인 있음 재질문 필요 → answer로 이동
-                    console.log("✅ 빈 도메인 있음 → /answer 흐름으로 전환됨");
+                .then(res => res.json())
+            // 1. /check 응답에서 reply 메시지 확인
+            .then(checkData => {
+                const reply = checkData.reply;
+                const isFull = checkData.isFull; // ✅ boolean 확인
 
-                    const botMessage = document.createElement("div");
-                    botMessage.textContent = "🤖 여봇: " + data.reply;
-                    chatBox.appendChild(botMessage);
-                    chatBox.scrollTop = chatBox.scrollHeight
+                const botMessage = document.createElement("div");
+                botMessage.textContent = "🤖 여봇: " + reply;
+                chatBox.appendChild(botMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
 
-                    conversationHistory.push({
+                travelRequestBody.conversationHistory.push({ role: "assistant", content: reply });
+
+                if (isFull) {
+                    // 모든 도메인이 채워졌을 경우 /plan으로 이동
+                    return fetch("/plan", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(travelRequestBody)
+                    });
+                } else {
+                    // 도메인이 아직 비어있으면 추가 질문 유도
+                    const followupMessage = document.createElement("div");
+                    followupMessage.textContent = "🤖 여봇: 여행 준비를 위해 추가 정보가 필요해요! 더 알려주세요 ✨";
+                    chatBox.appendChild(followupMessage);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    travelRequestBody.conversationHistory.push({
                         role: "assistant",
-                        content: data.reply
+                        content: "여행 준비를 위해 추가 정보가 필요해요! 더 알려주세요 ✨"
                     });
                 }
-        })
-        .catch(err => {
-            console.error("서버 응답 실패 (/check):", err);
-        });
-        });
+            })
+                .catch(err => {
+                console.error("❌ 오류 발생:", err);
+                const botMessage = document.createElement("div");
+                botMessage.textContent = "🤖 여봇: 서버 연결 오류로 답변을 불러오지 못했어요.";
+                chatBox.appendChild(botMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                travelRequestBody.conversationHistory.push({
+                    role: "assistant",
+                    content: "서버 연결 오류로 답변을 불러오지 못했어요."
+                });
+            });
     }
 </script>

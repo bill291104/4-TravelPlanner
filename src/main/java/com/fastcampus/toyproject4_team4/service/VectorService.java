@@ -8,6 +8,7 @@ import com.fastcampus.toyproject4_team4.entity.Scenario;
 import com.fastcampus.toyproject4_team4.repository.PromptRepository;
 import com.fastcampus.toyproject4_team4.repository.ScenarioRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,17 +17,14 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class VectorService {
     @Value("${fastapi.url}")
     String fastApiUrl;
 
+    private final APIUtil apiUtil;
     private final PromptRepository promptRepository;
     private final ScenarioRepository scenarioRepository;
-
-    public VectorService(PromptRepository promptRepository, ScenarioRepository scenarioRepository) {
-        this.promptRepository = promptRepository;
-        this.scenarioRepository = scenarioRepository;
-    }
 
     public List<Long> service(String context, Domains targetDomain, List<String> keywords) {
         log.debug("Vector Service Called\nArguments\ncontext: {}\ntargetDomain: {}\nkeywords: {}", context, targetDomain.toString(), keywords);
@@ -35,7 +33,7 @@ public class VectorService {
 
         FastAPISimilaritySearchRequest payload = new FastAPISimilaritySearchRequest(context, targetDomain, keywords, prompt.getPromptTemplate());
         log.debug("Payload: {}", payload);
-        FastAPISimilaritySearchResponse pks = APIUtil.sendPostRequest(fastApiUrl + "/vector_ss/pks", payload, new TypeReference<>() {});
+        FastAPISimilaritySearchResponse pks = apiUtil.sendPostRequest(fastApiUrl + "/vector_ss/pks", payload, new TypeReference<>() {});
         log.debug("PK Extract Successfully\nResult\npks: {}", pks);
         return pks.pks();
     }

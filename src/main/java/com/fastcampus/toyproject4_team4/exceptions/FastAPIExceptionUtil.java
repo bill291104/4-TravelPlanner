@@ -19,7 +19,7 @@ import java.net.http.HttpResponse;
 public class FastAPIExceptionUtil {
 
     // FastAPI가 에러 발생 시 발생하는 JSON 응답 구조에 맞는 Record를 정의
-    public record ErrorResponse(boolean error, String name, String message, Object details) {}
+    public record ErrorResponse(String name, String detail) {}
     
     // 클래스 멤버
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -87,7 +87,14 @@ public class FastAPIExceptionUtil {
 
         // 파싱된 ErrorResponse에서 에러 코드와 메세지를 추출
         String errorCode = error.name();
-        String errorMessage = error.message();
+        String errorMessage = error.detail();
+
+        if (errorCode == null) {
+            errorCode = "UnknownError";
+        }
+        if (errorMessage == null) {
+            errorMessage = "No error message provided";
+        }
 
         // HTTP 상태 코드에 따라 분기하여 적절한 예외를 생성하고 던짐.
         if(statusCode >= 400 && statusCode < 500) {

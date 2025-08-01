@@ -1,7 +1,12 @@
 package com.fastcampus.toyproject4_team4.config;
 
 import com.fastcampus.toyproject4_team4.Domains;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.lang.NonNull;
@@ -16,6 +21,17 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addConverter(new StringToDomainsConverter());
     }
 
+    /**
+     * Jackson ObjectMapper 설정
+     * Java 8 시간 타입(LocalDateTime, LocalDate 등)을 JSON으로 직렬화/역직렬화할 수 있도록 설정합니다.
+     */
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     /**
      * URL 경로의 문자열을 Domains Enum으로 변환하는 역할을 하는 Converter 클래스입니다.

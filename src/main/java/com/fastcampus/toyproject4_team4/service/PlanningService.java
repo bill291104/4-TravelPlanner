@@ -22,12 +22,18 @@ public class PlanningService {
 
     private final PromptRepository promptRepository;
     private final ScenarioRepository scenarioRepository;
+    private final APIUtil apiUtil;
 
     public TravelPlanResponse createTravelPlan(TravelData travelData) {
         Scenario scenario = scenarioRepository.findByCode("PLN_001").orElseThrow(IllegalArgumentException::new);
         Prompt prompt = promptRepository.findByScenario(scenario).orElseThrow(IllegalArgumentException::new);
-        FastAPIMakePlanRequest payload = new FastAPIMakePlanRequest(prompt.getPromptTemplate(), new ArrayList<>(), travelData.conversationHistory(), travelData.places(), travelData.restaurants(), travelData.accommodations());
-        TravelPlanResponse response = APIUtil.sendPostRequest(fastApiUrl + "/make_plan", payload, new TypeReference<>() {});
+        FastAPIMakePlanRequest payload = new FastAPIMakePlanRequest(prompt.getPromptTemplate(),
+                new ArrayList<>(), // userRequests
+                travelData.conversationHistory(),
+                travelData.places() == null ? new ArrayList<>() : travelData.places(),
+                travelData.restaurants() == null ? new ArrayList<>() : travelData.restaurants(),
+                travelData.accommodations() == null ? new ArrayList<>() : travelData.accommodations());
+        TravelPlanResponse response = apiUtil.sendPostRequest(fastApiUrl + "/planning/make", payload, new TypeReference<>() {});
         return response;
     }
 }

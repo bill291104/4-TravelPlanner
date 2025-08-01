@@ -4,6 +4,7 @@ import com.fastcampus.toyproject4_team4.exceptions.FastAPIExceptionUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
@@ -12,15 +13,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
+@Component
 @Log4j2
 public class APIUtil {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
     private static final HttpClient client = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(100))
             .build();
 
-    public static <S, R> R sendPostRequest(String uri, S payload, TypeReference<R> responseTypeRef) {
+    public APIUtil(ObjectMapper objectMapper){
+        this.objectMapper = objectMapper;
+    }
+
+    public <S, R> R sendPostRequest(String uri, S payload, TypeReference<R> responseTypeRef) {
         log.debug("Send Post Request\nPayload: {}", payload);
         try {
             String requestBody = objectMapper.writeValueAsString(payload);
@@ -38,7 +45,7 @@ public class APIUtil {
         }
     }
 
-    static <S> void sendPostRequest(String uri, S payload) {
+    public <S> void sendPostRequest(String uri, S payload) {
         log.debug("Send Post Request\nPayload: {}", payload);
         try {
             String requestBody = objectMapper.writeValueAsString(payload);
@@ -55,7 +62,7 @@ public class APIUtil {
         }
     }
 
-    static void sendDeleteRequest(String uri) {
+    public void sendDeleteRequest(String uri) {
         log.debug("Send Delete Request");
         try {
             HttpRequest request = HttpRequest.newBuilder()

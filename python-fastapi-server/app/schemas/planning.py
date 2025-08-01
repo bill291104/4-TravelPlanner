@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..core.constants import Domains
 
@@ -113,7 +113,7 @@ class PlanningRequest(BaseModel):
     supervisor_prompt: str
 
     # 2. 사용자가 추가로 입력한 구체적인 요구사항
-    user_requests: Optional[List[str]] = "특별한 추가 요구사항 없음"
+    user_requests: Optional[List[str]] = Field(default_factory=lambda: ["특별한 추가 요구사항 없음"])
 
     # 3. 전체 대화 내용 (LLM이 맥락을 파악하는 데 중요)
     conversation_history: List[ChatMessage]

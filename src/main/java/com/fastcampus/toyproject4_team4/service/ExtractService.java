@@ -8,6 +8,7 @@ import com.fastcampus.toyproject4_team4.entity.Scenario;
 import com.fastcampus.toyproject4_team4.repository.PromptRepository;
 import com.fastcampus.toyproject4_team4.repository.ScenarioRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -15,14 +16,12 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ExtractService {
     private final PromptRepository promptRepository;
     private final ScenarioRepository scenarioRepository;
+    private final APIUtil apiUtil;
 
-    public ExtractService(PromptRepository promptRepository, ScenarioRepository scenarioRepository) {
-        this.promptRepository = promptRepository;
-        this.scenarioRepository = scenarioRepository;
-    }
 
     public Domains extractDomain(String context) {
         log.debug("Extracting Domains Service Called\nArguments\ncontext: {}", context);
@@ -41,7 +40,7 @@ public class ExtractService {
         log.debug("Payload: {}", payload);
 
         // 요청, 응답
-        Domains targetDomain = APIUtil.sendPostRequest("http://localhost:8000/extract/domain", payload, new TypeReference<Domains>() {});
+        Domains targetDomain = apiUtil.sendPostRequest("http://localhost:8000/extract/domain", payload, new TypeReference<Domains>() {});
 
         log.debug("Domain Extract Successfully\nResult\ntargetDomain: {}", targetDomain);
         return targetDomain;
@@ -59,7 +58,7 @@ public class ExtractService {
         log.debug("Payload: {}", payload);
 
         // 요청, 응답
-        List<String> keywords = APIUtil.sendPostRequest("http://localhost:8000/extract/keyword", payload, new TypeReference<List<String>>() {});
+        List<String> keywords = apiUtil.sendPostRequest("http://localhost:8000/extract/keyword", payload, new TypeReference<List<String>>() {});
 
         log.debug("Keyword Extract Successfully\nResult\nkeywords: {}", keywords);
         return keywords;

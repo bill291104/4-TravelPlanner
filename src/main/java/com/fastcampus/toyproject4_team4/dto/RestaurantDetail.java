@@ -2,6 +2,7 @@ package com.fastcampus.toyproject4_team4.dto;
 
 import com.fastcampus.toyproject4_team4.entity.restaurant.Menu;
 import com.fastcampus.toyproject4_team4.entity.restaurant.Restaurant;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,9 +19,9 @@ public record RestaurantDetail(
         String tel,
         Byte michelinStar,
         String url,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        LocalDateTime embeddedAt,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime createdAt,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime updatedAt,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime embeddedAt,
         TravelStyleDetail travelStyle,
         List<MenuDetail> menus,
         List<HashtagDetail> hashtags
