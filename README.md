@@ -11,6 +11,7 @@
 - 화면 정의서
 - 시스템 흐름 정의서
 - PPT 발표 자료
+- 사용자 페이지 시연 영상, 관리자 페이지 시연 영상
 - WBS & Task
 - [**시스템 아키텍쳐 설계서, 플로우 차트 - Miro**](https://miro.com/app/board/uXjVJdO0PJk=/)
 - [**회의록**](https://www.notion.so/4-2309047c353d80b98b4cc6ac4e25b668)
