@@ -238,15 +238,12 @@
         document.getElementById("intro").style.display = "none";
         document.getElementById("main-container").style.display = "flex";
 
-        const chatBox = document.getElementById("chat-box");
         addBotMessage("안녕하세요! 어디로 여행가고 싶으신가요?");
-
         travelRequestBody.conversationHistory.push({
             role: "assistant",
             content: "안녕하세요! 어디로 여행가고 싶으신가요?"
         });
 
-        // Enter 키 이벤트 리스너 추가
         const input = document.getElementById("user-input");
         input.addEventListener("keydown", function(event) {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -264,7 +261,7 @@
             messageElement.id = 'thinking-message';
         }
         chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight; // 항상 맨 아래로 스크롤
+        chatBox.scrollTop = chatBox.scrollHeight;
         return messageElement;
     }
 
@@ -296,7 +293,7 @@
         input.value = "";
         travelRequestBody.conversationHistory.push({ role: "user", content: message });
 
-        const thinkingMessage = showThinking(); // '생각중...' 메시지 표시
+        const thinkingMessage = showThinking();
 
         fetch("/answer", {
             method: "POST",
@@ -304,32 +301,52 @@
             body: JSON.stringify({ context: message })
         })
             .then(res => {
-                if (!res.ok) throw new Error("FastAPI /answer 연결 실패");
-                return res.json();
+                return res.json().then(body => ({ ok: res.ok, body }));
             })
-            .then(answerData => {
-                thinkingMessage.remove(); // '생각중...' 메시지 제거
-                const reply = answerData.reply || "알겠습니다. 여행 계획에 반영할게요!"; // ✅ 문구 수정
-                addBotMessage(reply);
-                travelRequestBody.conversationHistory.push({ role: "assistant", content: reply });
+            .then(({ ok, body }) => {
+                thinkingMessage.remove();
 
-                // domain과 details 기반으로 travelRequestBody에 저장
-                const domain = answerData.domain;
-                const details = answerData.details || [];
+                let botReply = "";
 
-                if (domain === "place") travelRequestBody.places = details;
-                else if (domain === "restaurant") travelRequestBody.restaurants = details;
-                else if (domain === "accom") travelRequestBody.accommodations = details;
+                if (ok) {
+                    // --- 1. 200번대 응답 (성공) 처리 ---
+                    // 1.1. travelRequestBody에 domain, details 정보 저장
+                    const domain = body.domain;
+                    const details = body.details || [];
+                    if (domain === "place") travelRequestBody.places = details;
+                    else if (domain === "restaurant") travelRequestBody.restaurants = details;
+                    else if (domain === "accom") travelRequestBody.accommodations = details;
 
-                // answer 응답 포함된 전체 body로 check 전송
-                const thinkingCheckMessage = showThinking(); // 다음 단계를 위해 다시 '생각중...' 표시
+                    // 1.2. 정해진 답변으로 응답
+                    botReply = "알겠습니다. 여행 계획에 반영할게요!";
+
+                } else {
+                    // --- 2. 400/500번대 응답 (실패) 처리 ---
+                    // 2.1. message 필드로 응답
+                    botReply = body.message || "서버에서 오류가 발생했지만, 구체적인 메시지가 없습니다.";
+                    // 2.2. travelRequestBody는 수정하지 않음
+                }
+
+                // 공통 로직: 챗봇 답변을 화면에 표시하고 대화 기록에 추가
+                addBotMessage(botReply);
+                travelRequestBody.conversationHistory.push({ role: "assistant", content: botReply });
+
+                // --- 3. 성공/실패와 관계없이 /check 루틴 수행 ---
+                const thinkingCheckMessage = showThinking();
                 return fetch("/check", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(travelRequestBody)
-                }).finally(() => thinkingCheckMessage.remove()); // fetch가 끝나면 '생각중' 제거
+                }).finally(() => thinkingCheckMessage.remove());
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(errorBody => {
+                        throw new Error(errorBody.message || "Check API에서 오류가 발생했습니다.");
+                    });
+                }
+                return res.json();
+            })
             .then(checkData => {
                 const reply = checkData.reply;
                 const isFull = checkData.isFull;
@@ -338,42 +355,48 @@
                 travelRequestBody.conversationHistory.push({ role: "assistant", content: reply });
 
                 if (isFull) {
-                    const planThinkingMessage = showThinking(); // '계획 생성중...' 표시
+                    const planThinkingMessage = showThinking();
                     fetch("/plan", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(travelRequestBody)
                     })
-                        .then(res => res.json())
+                        .then(res => {
+                            if (!res.ok) {
+                                return res.json().then(errorBody => {
+                                    throw new Error(errorBody.message || "Plan API에서 오류가 발생했습니다.");
+                                });
+                            }
+                            return res.json();
+                        })
                         .then(planData => {
-                            planThinkingMessage.remove(); // '계획 생성중...' 제거
+                            planThinkingMessage.remove();
                             addBotMessage("여행 계획이 완성되었어요! 오른쪽에서 확인해보세요.");
                             displayFinalPlan(planData.final_plan);
                         })
                         .catch(err => {
                             planThinkingMessage.remove();
-                            handleError(err, "계획 생성에 실패했어요.")
+                            handleError(err, err.message || "계획 생성 중 오류가 발생했습니다.");
                         });
                 }
             })
             .catch(err => {
-                removeThinking(); // 오류 발생 시 '생각중...' 메시지 제거
-                handleError(err, "서버 연결 오류로 답변을 불러오지 못했어요.");
+                removeThinking();
+                const errorMessage = err.message || "서버 연결 중 오류가 발생했습니다.";
+                handleError(err, errorMessage);
             });
     }
 
     function displayFinalPlan(plan) {
         const planContainer = document.getElementById("plan-container");
-        planContainer.style.display = "block"; // 계획 컨테이너 보이기
-        planContainer.innerHTML = ''; // 이전 내용 초기화
+        planContainer.style.display = "block";
+        planContainer.innerHTML = '';
 
-        // 제목 추가
         const planTitle = document.createElement('div');
         planTitle.className = 'plan-title';
         planTitle.textContent = plan.plan_title || "나만의 여행 계획";
         planContainer.appendChild(planTitle);
 
-        // 일자별 계획 추가
         plan.daily_plans.forEach(dailyPlan => {
             const dailyDiv = document.createElement('div');
             dailyDiv.className = 'daily-plan';
@@ -393,7 +416,6 @@
                 eventDiv.className = 'event';
 
                 const eventHeaderDiv = document.createElement('div');
-
                 const eventTime = document.createElement('span');
                 eventTime.className = 'event-time';
                 eventTime.textContent = event.time;
@@ -419,7 +441,6 @@
                     <strong>예상 비용:</strong> ${event.estimated_cost ? parseInt(event.estimated_cost).toLocaleString() + '원' : '정보 없음'}
                 `;
                 eventDiv.appendChild(eventDetails);
-
                 dailyDiv.appendChild(eventDiv);
             });
             planContainer.appendChild(dailyDiv);

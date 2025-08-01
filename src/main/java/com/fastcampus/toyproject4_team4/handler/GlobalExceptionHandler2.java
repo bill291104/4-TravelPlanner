@@ -1,7 +1,9 @@
 package com.fastcampus.toyproject4_team4.handler;
 
+import com.fastcampus.toyproject4_team4.exceptions.FastAPIExceptionUtil;
 import com.fastcampus.toyproject4_team4.exceptions.PythonServiceException;
 import com.fastcampus.toyproject4_team4.exceptions.embedding.*;
+import com.fastcampus.toyproject4_team4.exceptions.internal.PythonInternalServerError;
 import com.fastcampus.toyproject4_team4.exceptions.llm.*;
 import com.fastcampus.toyproject4_team4.exceptions.common.*;
 import lombok.extern.log4j.Log4j2;
@@ -35,7 +37,21 @@ public class GlobalExceptionHandler2 {
      * EmbeddingDeletionException
      */
     @ExceptionHandler({
-            PythonServiceException.class
+            PythonServiceException.class,
+            InvalidInputException.class,
+            ResourceNotFoundException.class,
+            ServiceUnavailableException.class,
+            EmbeddingCreationException.class,
+            EmbeddingDeletionException.class,
+            EmbeddingServiceException.class,
+            PythonInternalServerError.class,
+            AmbiguousClassificationException.class,
+            LLMAPICommunicationException.class,
+            LLMParsingFailedException.class,
+            LLMResponseException.class,
+            PromptTemplateException.class,
+            UnsupportedDomainException.class,
+            FastAPIExceptionUtil.ServerErrorException.class
     })
     public ResponseEntity<Object> handlePythonServerErrors(PythonServiceException e, WebRequest request){
         // 개발자를 위한 상세 로그 기록(필수)

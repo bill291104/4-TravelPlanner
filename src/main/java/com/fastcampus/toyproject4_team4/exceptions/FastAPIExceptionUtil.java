@@ -3,8 +3,10 @@ package com.fastcampus.toyproject4_team4.exceptions;
 import com.fastcampus.toyproject4_team4.exceptions.common.*;
 import com.fastcampus.toyproject4_team4.exceptions.embedding.*;
 import com.fastcampus.toyproject4_team4.exceptions.llm.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +17,16 @@ import java.net.http.HttpResponse;
  * 적절한 자바 커스텀 예외를 생성하는 팩토리 클래스
  * 해당 클래스는 예외 매핑 로직을 중앙 집중화하고 재사용 가능하게 설계
  */
+@Log4j2
 @Service
 public class FastAPIExceptionUtil {
 
     // FastAPI가 에러 발생 시 발생하는 JSON 응답 구조에 맞는 Record를 정의
-    public record ErrorResponse(String name, String detail) {}
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ErrorResponse(
+            String name,
+            String detail
+    ) {}
     
     // 클래스 멤버
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -67,6 +74,7 @@ public class FastAPIExceptionUtil {
      */
     public static void handleErrorResponse(HttpResponse<String> response) throws ApiClientException, PythonServiceException {
         int statusCode = response.statusCode();
+        log.info("Status code: {}", statusCode);
         String responseBody = response.body();
 
         // 성공적인 상태 코드 (200 ~ 299)일 경우, 아무 작업도 하지 않고 메서드 종료

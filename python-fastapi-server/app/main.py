@@ -23,14 +23,7 @@ from .routers import embedding, extract, vector_ss, planning
 from .routers import embedding, extract, vector_ss
 from fastapi.exceptions import RequestValidationError
 
-from .core.exceptions import (
-    CustomBaseException,
-    EmbeddingCreationError,
-    EmbeddingDeletionError,
-    TravelDocumentNotFoundError,
-    DatabaseConnectionError,
-    InvalidInputError
-)
+from .core.exceptions import *
 
 # health check를 위해 lifespan 외부에서도 접근할 전역 변수
 server_startup_time = "N/A"
@@ -88,6 +81,33 @@ async def health_check():
         "server_startup_time": server_startup_time
     }
 
+# CustomBaseException을 상속 받는 모든 커스텀 예외를 처리
+
+@app.exception_handler(CustomBaseException)
+@app.exception_handler(EmbeddingServiceError)
+@app.exception_handler(EmbeddingCreationError)
+@app.exception_handler(EmbeddingDeletionError)
+@app.exception_handler(TravelDocumentNotFoundError)
+@app.exception_handler(DatabaseConnectionError)
+@app.exception_handler(InvalidInputError)
+@app.exception_handler(NoRelevantDocumentsFoundError)
+@app.exception_handler(LLMServiceError)
+@app.exception_handler(LLMAPIError)
+@app.exception_handler(LLMParsingError)
+@app.exception_handler(LLMResponseError)
+@app.exception_handler(PromptTemplateError)
+@app.exception_handler(UnsupportedDomainClassificationError)
+@app.exception_handler(AmbiguousClassificationError)
+async def custom_exception_handler(request: Request, exc: CustomBaseException):
+    print(f"{datetime.now()} Custom Exception Caught: {exc.name} - {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "name" : exc.name,
+            "detail" : exc.detail
+        }
+    )
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """
@@ -98,26 +118,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content = {
-            "error" : True,
             "name" : "ValidationError",
-            "message" : "요청 데이터 형식이 유효하지 않습니다.",
-            "details" : exc.errors() # Pydantic이 제공하는 상세 오류 정보
+            "detail" : f"요청 데이터 형식이 유효하지 않습니다. 상세: {exc.errors()}" # Pydantic이 제공하는 상세 오류 정보
         },
     )
 
-
-# CustomBaseException을 상속 받는 모든 커스텀 예외를 처리
-@app.exception_handler(CustomBaseException)
-async def custom_exception_handler(request: Request, exc: CustomBaseException):
-    print(f"{datetime.now()} Custom Exception Caught: {exc.name} - {exc.detail}")
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": True,
-            "name" : exc.name,
-            "message" : exc.detail
-        }
-    )
 
 # 나머지 예상치 못한 모든 예외를 처리
 @app.exception_handler(Exception)
@@ -127,9 +132,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content= {
-            "error" : True,
             "name" : type(exc).__name__, # 예외 클래스 이름
-            "message" : "서버 내부 오류가 발생했습니다.",
-            "detail": str(exc) # 개발/디버깅 환경에서만 원본 예외 메시지 포함 (운영 환경에서는 주석 처리 권장)
+            "detail": "서버 내부 오류가 발생했습니다." + str(exc) # 개발/디버깅 환경에서만 원본 예외 메시지 포함 (운영 환경에서는 주석 처리 권장)
         }
     )
