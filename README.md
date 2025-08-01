@@ -1,3 +1,20 @@
+# 네가짜줘(TEAM 4) - BE Toy Project 4
+
+## 산출물 
+`(프로젝트 폴더 하위의 docs 폴더에 있습니다.)`
+- ERD(논리 모델, 물리 모델)
+- 주제 영역 정의서
+- DB 설계서
+- 요구 사항 정의서
+- 요구 사항 분석서
+- 표준 용어 정의서
+- 화면 정의서
+- 시스템 흐름 정의서
+- PPT 발표 자료
+- WBS & Task
+- [**시스템 아키텍쳐 설계서, 플로우 차트 - Miro**](https://miro.com/app/board/uXjVJdO0PJk=/)
+- [**회의록**](https://www.notion.so/4-2309047c353d80b98b4cc6ac4e25b668)
+
 # 토이 프로젝트 4 : 챗봇을 넘어 콜봇으로 based on AI (RAG + LLM)
 ### [프로젝트 개요] 
 - **프로젝트 명** : 챗봇을 넘어 콜봇으로 based on AI (RAG + LLM)
