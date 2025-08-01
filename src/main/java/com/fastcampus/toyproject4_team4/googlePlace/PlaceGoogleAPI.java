@@ -32,6 +32,14 @@ public class PlaceGoogleAPI {
         String query = "부산 커플 여행지";
 
         String API_KEY = properties.getProperty("google.api.key");
+//        // 환경변수 형태인지 확인하고 실제 환경변수에서 읽기
+//        if (API_KEY != null && API_KEY.startsWith("${") && API_KEY.endsWith("}")) {
+//            // ${GOOGLE_API_KEY} 형태에서 GOOGLE_API_KEY 추출
+//            String envVarName = API_KEY.substring(2, API_KEY.length() - 1);
+//            API_KEY = System.getenv(envVarName);
+//            System.out.println("🔑 환경변수에서 API 키 읽기: " + envVarName);
+//        }
+
         String DB_URL = properties.getProperty("db.url") +
                 "?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul";
         String DB_USER = properties.getProperty("db.user");
@@ -40,6 +48,7 @@ public class PlaceGoogleAPI {
         System.out.println("🔗 연결 정보:");
         System.out.println("   URL: " + DB_URL);
         System.out.println("   User: " + DB_USER);
+        System.out.println("   API Key: " + (API_KEY != null ? API_KEY.substring(0, 10) + "..." : "NULL"));
 
         // 테이블 존재 여부 먼저 확인
         try (Connection testConn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
@@ -79,6 +88,8 @@ public class PlaceGoogleAPI {
                         "&key=" + API_KEY +
                         (nextPageToken != null ? "&pagetoken=" + nextPageToken : "");
 
+                System.out.println("🔍 API 요청 URL: " + url.substring(0, url.indexOf("&key=")) + "&key=***");
+
                 Request request = new Request.Builder().url(url).build();
                 Response response = client.newCall(request).execute();
 
@@ -87,20 +98,52 @@ public class PlaceGoogleAPI {
                     break;
                 }
 
-                JsonObject root = JsonParser.parseString(response.body().string()).getAsJsonObject();
+                String responseBody = response.body().string();
+                System.out.println("📄 API 응답: " + responseBody.substring(0, Math.min(500, responseBody.length())) + "...");
+
+                JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+
+                // 상태 확인
+                if (root.has("status")) {
+                    String status = root.get("status").getAsString();
+                    System.out.println("📊 API 상태: " + status);
+                    if (!"OK".equals(status)) {
+                        System.err.println("❌ API 오류: " + status);
+                        if (root.has("error_message")) {
+                            System.err.println("   오류 메시지: " + root.get("error_message").getAsString());
+                        }
+                        break;
+                    }
+                }
+
                 JsonArray results = root.getAsJsonArray("results");
+                System.out.println("🔢 검색 결과 개수: " + (results != null ? results.size() : 0));
+
+                if (results == null || results.size() == 0) {
+                    System.out.println("⚠️ 검색 결과가 없습니다.");
+                    break;
+                }
 
                 for (JsonElement element : results) {
                     JsonObject place = element.getAsJsonObject();
 
                     String placeId = place.get("place_id").getAsString();
+                    System.out.println("🏢 처리 중인 장소 ID: " + placeId);
 
                     // 상세 정보 가져오기 (더 많은 필드 포함)
                     JsonObject details = fetchPlaceDetails(placeId, API_KEY);
 
+                    if (details == null) {
+                        System.err.println("❌ 상세 정보 가져오기 실패: " + placeId);
+                        continue;
+                    }
+
                     // 기본 정보 추출
                     String name = getStringValue(details, "name");
                     String address = getStringValue(details, "formatted_address");
+
+                    System.out.println("📍 장소명: " + name);
+                    System.out.println("📍 주소: " + address);
 
                     // 위도, 경도 추출
                     double lat = 0.0, lon = 0.0;
@@ -108,10 +151,12 @@ public class PlaceGoogleAPI {
                         JsonObject location = details.getAsJsonObject("geometry").getAsJsonObject("location");
                         lat = location.get("lat").getAsDouble();
                         lon = location.get("lng").getAsDouble();
+                        System.out.println("🌍 좌표: " + lat + ", " + lon);
                     }
 
-                    // 설명 생성 (editorial_summary나 types 기반)
+                    // 설명 생성
                     String description = generateDescription(details);
+                    System.out.println("📝 설명: " + description);
 
                     LocalDateTime now = LocalDateTime.now();
 
@@ -124,7 +169,7 @@ public class PlaceGoogleAPI {
                         stmt.setBigDecimal(5, BigDecimal.valueOf(lon));
                         stmt.setObject(6, now);
                         stmt.setObject(7, now);
-                        stmt.setObject(8, now);
+                        stmt.setObject(8, null);
                         stmt.setString(9, placeId);
                         stmt.setString(10, placeId); // WHERE 조건용
 
@@ -134,12 +179,16 @@ public class PlaceGoogleAPI {
                         } else {
                             System.out.println("⚠️ 이미 존재하는 장소: " + name);
                         }
+                    } catch (SQLException e) {
+                        System.err.println("❌ 장소 저장 실패: " + e.getMessage());
+                        e.printStackTrace();
                     }
 
                     // 리뷰 저장
                     Long placeDbId = getPlaceIdByPlaceId(conn, placeId);
                     if (placeDbId != null && details.has("reviews")) {
                         JsonArray reviews = details.getAsJsonArray("reviews");
+                        System.out.println("📝 리뷰 개수: " + reviews.size());
                         for (JsonElement revElem : reviews) {
                             JsonObject rev = revElem.getAsJsonObject();
                             String comment = getStringValue(rev, "text");
@@ -149,7 +198,11 @@ public class PlaceGoogleAPI {
                                 insertPlaceReview(conn, placeDbId, comment, rating, now);
                             }
                         }
+                    } else {
+                        System.out.println("⚠️ 리뷰 없음 또는 place_id 찾기 실패");
                     }
+
+                    System.out.println("---"); // 구분선
                 }
 
                 pageCount++;
@@ -184,12 +237,33 @@ public class PlaceGoogleAPI {
                 "&language=ko" +
                 "&key=" + apiKey;
 
+        System.out.println("🔍 상세정보 API 요청: " + url.substring(0, url.indexOf("&key=")) + "&key=***");
+
         Request request = new Request.Builder().url(url).build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
+                System.err.println("❌ 상세 정보 API 실패: " + response.code());
                 throw new RuntimeException("상세 정보 API 실패: " + response.code());
             }
-            JsonObject root = JsonParser.parseString(response.body().string()).getAsJsonObject();
+
+            String responseBody = response.body().string();
+            System.out.println("📄 상세정보 응답: " + responseBody.substring(0, Math.min(300, responseBody.length())) + "...");
+
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+
+            // 상태 확인
+            if (root.has("status")) {
+                String status = root.get("status").getAsString();
+                System.out.println("📊 상세정보 API 상태: " + status);
+                if (!"OK".equals(status)) {
+                    System.err.println("❌ 상세정보 API 오류: " + status);
+                    if (root.has("error_message")) {
+                        System.err.println("   오류 메시지: " + root.get("error_message").getAsString());
+                    }
+                    return null;
+                }
+            }
+
             return root.getAsJsonObject("result");
         }
     }
@@ -205,50 +279,19 @@ public class PlaceGoogleAPI {
     }
 
     /**
-     * 장소 설명을 생성하는 메서드
+     * 장소 설명을 생성하는 메서드 (한 줄 소개만)
      */
     private static String generateDescription(JsonObject details) {
-        StringBuilder description = new StringBuilder();
-
-        // editorial_summary가 있으면 우선 사용
+        // editorial_summary가 있으면 그것만 사용
         if (details.has("editorial_summary")) {
             JsonObject summary = details.getAsJsonObject("editorial_summary");
             if (summary.has("overview")) {
-                description.append(summary.get("overview").getAsString());
+                return summary.get("overview").getAsString();
             }
         }
 
-        // types 정보로 카테고리 추가
-        if (details.has("types")) {
-            JsonArray types = details.getAsJsonArray("types");
-            StringBuilder categories = new StringBuilder();
-
-            for (JsonElement type : types) {
-                String typeStr = type.getAsString();
-                String koreanType = translatePlaceType(typeStr);
-                if (koreanType != null) {
-                    if (categories.length() > 0) categories.append(", ");
-                    categories.append(koreanType);
-                }
-            }
-
-            if (categories.length() > 0) {
-                if (description.length() > 0) description.append(" ");
-                description.append("카테고리: ").append(categories.toString());
-            }
-        }
-
-        // 평점 정보 추가
-        if (details.has("rating")) {
-            double rating = details.get("rating").getAsDouble();
-            int totalRatings = details.has("user_ratings_total") ?
-                    details.get("user_ratings_total").getAsInt() : 0;
-
-            if (description.length() > 0) description.append(" ");
-            description.append(String.format("Google 평점: %.1f/5.0 (%d개 리뷰)", rating, totalRatings));
-        }
-
-        return description.length() > 0 ? description.toString() : "Google Places에서 가져온 장소입니다.";
+        // editorial_summary가 없으면 기본 메시지
+        return "Google Places에서 가져온 장소입니다.";
     }
 
     /**
@@ -425,7 +468,7 @@ public class PlaceGoogleAPI {
             stmt.setByte(3, (byte) Math.round(rating));
             stmt.setObject(4, now);
             stmt.setObject(5, now);
-            stmt.setObject(6, now);
+            stmt.setObject(6, null);
             stmt.executeUpdate();
             System.out.println("✅ 리뷰 저장 완료: " + comment.substring(0, Math.min(50, comment.length())) + "...");
         } catch (SQLException e) {

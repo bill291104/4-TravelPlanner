@@ -32,7 +32,7 @@ public class AccommodationGoogleAPI {
             return;
         }
 
-        String query = "부산 펜션";
+        String query = "부산 리조트";
 
         String API_KEY = properties.getProperty("google.api.key");
         String DB_URL = properties.getProperty("db.url") +
@@ -118,7 +118,7 @@ public class AccommodationGoogleAPI {
                     String type = extractAccommodationType(details);
 
                     // 설명 생성
-                    String description = generateAccommodationDescription(details);
+                    String description = generateDescription(details);
 
                     // 평점 추출
                     BigDecimal avgRating = null;
@@ -141,7 +141,7 @@ public class AccommodationGoogleAPI {
                         stmt.setString(8, mapUrl);
                         stmt.setObject(9, now);
                         stmt.setObject(10, now);
-                        stmt.setObject(11, now);
+                        stmt.setObject(11, null);
                         stmt.setString(12, placeId);
                         stmt.setString(13, placeId); // WHERE 조건용
 
@@ -287,58 +287,19 @@ public class AccommodationGoogleAPI {
     }
 
     /**
-     * 숙소 설명을 생성하는 메서드
+     * 장소 설명을 생성하는 메서드 (한 줄 소개만)
      */
-    private static String generateAccommodationDescription(JsonObject details) {
-        StringBuilder description = new StringBuilder();
-
-        // editorial_summary가 있으면 우선 사용
+    private static String generateDescription(JsonObject details) {
+        // editorial_summary가 있으면 그것만 사용
         if (details.has("editorial_summary")) {
             JsonObject summary = details.getAsJsonObject("editorial_summary");
             if (summary.has("overview")) {
-                description.append(summary.get("overview").getAsString());
+                return summary.get("overview").getAsString();
             }
         }
 
-        // types 정보로 카테고리 추가
-        if (details.has("types")) {
-            JsonArray types = details.getAsJsonArray("types");
-            StringBuilder categories = new StringBuilder();
-
-            for (JsonElement type : types) {
-                String typeStr = type.getAsString();
-                String koreanType = translateAccommodationType(typeStr);
-                if (koreanType != null) {
-                    if (categories.length() > 0) categories.append(", ");
-                    categories.append(koreanType);
-                }
-            }
-
-            if (categories.length() > 0) {
-                if (description.length() > 0) description.append(" ");
-                description.append("카테고리: ").append(categories.toString());
-            }
-        }
-
-        // 평점 정보 추가
-        if (details.has("rating")) {
-            double rating = details.get("rating").getAsDouble();
-            int totalRatings = details.has("user_ratings_total") ?
-                    details.get("user_ratings_total").getAsInt() : 0;
-
-            if (description.length() > 0) description.append(" ");
-            description.append(String.format("Google 평점: %.1f/5.0 (%d개 리뷰)", rating, totalRatings));
-        }
-
-        // 가격대 정보 추가
-        if (details.has("price_level")) {
-            int priceLevel = details.get("price_level").getAsInt();
-            String priceDesc = getPriceDescription(priceLevel);
-            if (description.length() > 0) description.append(" ");
-            description.append("가격대: ").append(priceDesc);
-        }
-
-        return description.length() > 0 ? description.toString() : "Google Places에서 가져온 숙박시설입니다.";
+        // editorial_summary가 없으면 기본 메시지
+        return "Google Places에서 가져온 장소입니다.";
     }
 
     /**
@@ -511,7 +472,7 @@ public class AccommodationGoogleAPI {
             stmt.setByte(3, (byte) Math.round(rating));
             stmt.setObject(4, now);
             stmt.setObject(5, now);
-            stmt.setObject(6, now);
+            stmt.setObject(6, null);
             stmt.executeUpdate();
             System.out.println("✅ 리뷰 저장 완료: " + comment.substring(0, Math.min(50, comment.length())) + "...");
         } catch (SQLException e) {
