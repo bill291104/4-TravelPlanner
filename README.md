@@ -1,5 +1,8 @@
 # 네가짜줘(TEAM 4) - BE Toy Project 4
 
+## 프로젝트 기여도 평가 보고서
+[프로젝트 기여도 평가 보고서](https://github.com/bill291104/4-TravelPlanner/blob/dev/%40bill291104%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EA%B8%B0%EC%97%AC%EB%8F%84%20%EB%B6%84%EC%84%9D%20%EB%B3%B4%EA%B3%A0%EC%84%9C.md)
+
 ## 산출물 
 `(프로젝트 폴더 하위의 docs 폴더에 있습니다.)`
 - ERD(논리 모델, 물리 모델)
